@@ -46,7 +46,7 @@
 ;;
 ;; You can't use this support and the full functionality of Rajesh
 ;; Vaidheeswarran's "p4.el" at the same time.  You can, however, use
-;; most of p4.el's functionality by setting the customization variable
+;; much of p4.el's functionality by setting the customization variable
 ;; "p4-do-find-file" to nil.  This will prevent p4.el from attempting
 ;; to "take ownership" of a Perforce file when you load it, but it
 ;; will allow you to use all of the p4.el commands that don't apply to
