@@ -200,7 +200,8 @@ The conflicts must be marked with rcsmerge conflict markers."
 	      (kill-buffer ancestor-buffer)
 	      (setq ancestor-buffer nil)))
 
-	(let ((config (current-window-configuration)))
+	(let ((config (current-window-configuration))
+	      (ediff-default-variant 'default-B))
 
 	  ;; Fire up ediff.
 
@@ -208,8 +209,7 @@ The conflicts must be marked with rcsmerge conflict markers."
 	   (if ancestor-buffer
 	       (ediff-merge-buffers-with-ancestor your-buffer other-buffer
 						  ancestor-buffer)
-	     (let ((ediff-default-variant 'default-B))
-	       (ediff-merge-buffers your-buffer other-buffer))))
+	     (ediff-merge-buffers your-buffer other-buffer)))
 
 	  ;; Ediff is now set up, and we are in the control buffer.
         ;; Do a few further adjustments and take precautions for exit.
