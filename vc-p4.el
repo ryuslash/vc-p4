@@ -55,6 +55,7 @@
 ;;; Code:
 
 (eval-when-compile
+  (require 'vc-hooks)
   (require 'vc)
   (require 'p4-lowlevel))
 
@@ -93,6 +94,82 @@
 	      (vc-call-backend ',(vc-backend file)
 			       'show-log-entry
 			       ',(vc-workfile-version file))))))))
+
+(defun vc-register (&optional set-version comment)
+  "Register the current file into a version control system.
+With prefix argument SET-VERSION, allow user to specify initial version
+level.  If COMMENT is present, use that as an initial comment.
+
+The version control system to use is found by cycling through the list
+`vc-handled-backends'.  The first backend in that list which declares
+itself responsible for the file (usually because other files in that
+directory are already registered under that backend) will be used to
+register the file.  If no backend declares itself responsible, the
+first backend that could register the file is used."
+  (interactive "P")
+  (unless buffer-file-name (error "No visited file"))
+  (when (vc-backend buffer-file-name)
+    (if (vc-registered buffer-file-name)
+	(error "This file is already registered")
+      (unless (y-or-n-p "Previous master file has vanished.  Make a new one? ")
+	(error "Aborted"))))
+  ;; Watch out for new buffers of size 0: the corresponding file
+  ;; does not exist yet, even though buffer-modified-p is nil.
+  (if (and (not (buffer-modified-p))
+	   (zerop (buffer-size))
+	   (not (file-exists-p buffer-file-name)))
+      (set-buffer-modified-p t))
+  (vc-buffer-sync)
+
+  (vc-start-entry buffer-file-name
+                  (if set-version
+                      (read-string (format "Initial version level for %s: "
+					   (buffer-name)))
+		    (let ((backend (vc-responsible-backend buffer-file-name)))
+		      (if (vc-find-backend-function backend 'init-version)
+			  (vc-call-backend backend 'init-version)
+			vc-default-init-version)))
+                  (or comment (not vc-initial-comment))
+		  nil
+                  "Enter initial comment."
+		  (lambda (file rev comment)
+		    (message "Registering %s... " file)
+		    (let ((backend (vc-responsible-backend file t)))
+		      (vc-file-clearprops file)
+		      (vc-call-backend backend 'register file rev comment)
+		      (vc-file-setprop file 'vc-backend backend)
+		      (unless vc-make-backup-files
+			(make-local-variable 'backup-inhibited)
+			(setq backup-inhibited t)))
+		    (message "Registering %s... done" file))))
+
+(defun vc-mode-line (file)
+  "Set `vc-mode' to display type of version control for FILE.
+The value is set in the current buffer, which should be the buffer
+visiting FILE."
+  (interactive (list buffer-file-name))
+  (if (not (vc-backend file))
+      (setq vc-mode nil)
+    (setq vc-mode (concat " " (if vc-display-status
+				  (vc-call mode-line-string file)
+				(symbol-name (vc-backend file)))))
+    ;; If the file is locked by some other user, make
+    ;; the buffer read-only.  Like this, even root
+    ;; cannot modify a file that someone else has locked.
+    (and (equal file (buffer-file-name))
+         (stringp (vc-state file))
+	 (setq buffer-read-only t))
+    ;; If the user is root, and the file is not owner-writable,
+    ;; then pretend that we can't write it
+    ;; even though we can (because root can write anything).
+    ;; This way, even root cannot modify a file that isn't locked.
+    (and (equal file (buffer-file-name))
+	 (not buffer-read-only)
+	 (zerop (user-real-uid))
+	 (zerop (logand (file-modes (buffer-file-name)) 128))
+	 (setq buffer-read-only t)))
+  (force-mode-line-update)
+  (vc-backend file))
 
 (if (not (fboundp 'vc-default-previous-version))
     (defun vc-previous-version (rev)
@@ -390,11 +467,15 @@ special case of a Perforce file that is added but not yet committed."
            (concat "P4:" rev)))))
 
 (defun vc-p4-register (file &optional rev comment)
-  (if rev
+  (if (and rev (not (string= rev "1")))
       (error "Can't specify revision when registering Perforce file."))
-  (if comment
+  (if (and comment (not (string= comment "")))
       (error "Can't specify comment when registering Perforce file."))
   (p4-lowlevel-add file))
+
+(defun vc-p4-init-version ()
+  "Returns `1', the default initial version for Perforce files."
+  "1")
 
 (defun vc-p4-responsible-p (file)
   "Returns true if FILE refers to a file or directory that is
@@ -463,8 +544,11 @@ comment COMMENT."
 
 (defun vc-p4-revert (file contents-done)
   "Revert FILE in Perforce.  Ignores CONTENTS-DONE."
-  (p4-lowlevel-revert file)
-  (vc-p4-state file nil t))
+  (let ((action (vc-file-getprop file 'vc-p4-action)))
+    (p4-lowlevel-revert file)
+    (if (string= action "add")
+	(vc-file-clearprops file)
+      (vc-p4-state file nil t))))
 
 (defun vc-p4-merge (file rev1 rev2)
   "Merge changes into Perforce FILE from REV1 to REV2."
@@ -591,7 +675,28 @@ files under the default directory otherwise."
 	(inhibit-read-only t))
     (if (not rev1)
 	(if (not rev2)
-	    (p4-lowlevel-diff file buffer)
+	    (if (string= (vc-file-getprop buffer-file-name 'vc-p4-action)
+			 "add")
+		; I can't figure out anything better to do here than
+		; to use diff-switches.  It would be so much easier if
+	        ; "p4 diff" and "p4 diff2" accepted real diff
+	        ; arguments instead of arguments with "-d" in front of
+	        ; them.
+		(progn
+		  (set-buffer buffer)
+		  (erase-buffer)
+		  (apply 'call-process
+			 (append
+			  (list diff-command
+				nil
+				buffer
+				nil)
+			  (if (listp diff-switches)
+			      diff-switches
+			    (list diff-switches))
+			  (list "/dev/null"
+				file))))
+	      (p4-lowlevel-diff file nil buffer))
 	  (p4-lowlevel-diff2 file file workfile-version rev2 buffer))
       (if rev2
 	  (p4-lowlevel-diff2 file file rev1 rev2 buffer)
