@@ -591,8 +591,9 @@ comment COMMENT."
 
 (defun vc-p4-print-log (file)
   "Print Perforce log for FILE into *vc* buffer."
-  (let ((inhibit-read-only t))
-    (set-buffer (get-buffer-create "*vc*"))
+  (set-buffer (get-buffer-create "*vc*"))
+  (let ((inhibit-read-only t)
+	(default-directory (file-name-directory file)))
     (erase-buffer)
     (p4-lowlevel-filelog file (current-buffer) t t)))
 
