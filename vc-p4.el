@@ -67,33 +67,37 @@
 
 ; We need to fix some functions that are broken in vc.el.
 
-(defun vc-print-log ()
-  "List the change log of the current buffer in a window."
-  (interactive)
-  (vc-ensure-vc-buffer)
-  (let* ((file buffer-file-name)
-	 (use-log-view (memq (vc-backend file) '(CVS RCS SCCS))))
-    (vc-call print-log file)
-    (set-buffer "*vc*")
-    (pop-to-buffer (current-buffer))
-    (if (and use-log-view (fboundp 'log-view-mode)) (log-view-mode))
-    (vc-exec-after
-     `(progn
-	(goto-char (point-max)) (forward-line -1)
-	(while (looking-at "=*\n")
-	  (delete-char (- (match-end 0) (match-beginning 0)))
-	  (forward-line -1))
-	(goto-char (point-min))
-	(if (looking-at "[\b\t\n\v\f\r ]+")
-	    (delete-char (- (match-end 0) (match-beginning 0))))
-	(shrink-window-if-larger-than-buffer)
-	;; move point to the log entry for the current version
-	(if (and use-log-view (fboundp 'log-view-goto-rev))
-	    (log-view-goto-rev ',(vc-workfile-version file))
-	  (if (vc-find-backend-function ',(vc-backend file) 'show-log-entry)
-	      (vc-call-backend ',(vc-backend file)
-			       'show-log-entry
-			       ',(vc-workfile-version file))))))))
+(if (fboundp 'vc-default-show-log-entry)
+    t
+
+  (defun vc-default-show-log-entry (backend ver)
+    (if (fboundp 'log-view-goto-rev)
+	(log-view-goto-rev rev)))
+  
+  (defun vc-print-log ()
+    "List the change log of the current buffer in a window."
+    (interactive)
+    (vc-ensure-vc-buffer)
+    (let ((file buffer-file-name))
+      (vc-call print-log file)
+      (set-buffer "*vc*")
+      (pop-to-buffer (current-buffer))
+      (log-view-mode)
+      (vc-exec-after
+       `(let ((inhibit-read-only t))
+	  (goto-char (point-max)) (forward-line -1)
+	  (while (looking-at "=*\n")
+	    (delete-char (- (match-end 0) (match-beginning 0)))
+	    (forward-line -1))
+	  (goto-char (point-min))
+	  (if (looking-at "[\b\t\n\v\f\r ]+")
+	      (delete-char (- (match-end 0) (match-beginning 0))))
+	  (shrink-window-if-larger-than-buffer)
+	  ;; move point to the log entry for the current version
+	  (vc-call-backend ',(vc-backend file)
+			   'show-log-entry
+			   ',(vc-workfile-version file))
+	  (set-buffer-modified-p nil))))))
 
 (defun vc-register (&optional set-version comment)
   "Register the current file into a version control system.
