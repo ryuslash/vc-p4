@@ -260,8 +260,8 @@ to t."
   "*Specifies the name of a command to call to annotate Perforce
 files.  I recommend //guest/jonathan_kamens/p4pr.perl in the Perforce
 repository public.perforce.com:1666.  Note that you need a version of
-this script which accept `--after=date' to tell it how far back to
-trace."
+this script which accept `--after=date', if you want to be able to
+specify a starting date when you run C-u C-x v g."
   :type 'string
   :group 'vc)
 
