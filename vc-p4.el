@@ -348,8 +348,11 @@ specify a starting date when you run C-u C-x v g."
 	   (getenv "P4CONFIG")
 	   (not (vc-p4-find-p4config (file-name-directory file))))
       nil
-    (let ((fstat (p4-lowlevel-fstat file nil t)))
-      (if (not fstat)
+    (let* ((fstat (p4-lowlevel-fstat file nil t))
+	   (action (cdr (or (assoc "action" fstat)
+			    (assoc "headAction" fstat)))))
+      (if (or (not fstat)
+	      (string= action "delete"))
 	  nil
 	; This sets a bunch of VC properties
 	(vc-p4-state file fstat)
@@ -471,7 +474,22 @@ special case of a Perforce file that is added but not yet committed."
       (error "Can't specify revision when registering Perforce file."))
   (if (and comment (not (string= comment "")))
       (error "Can't specify comment when registering Perforce file."))
-  (p4-lowlevel-add file))
+  (let* ((fstat (p4-lowlevel-fstat file nil t))
+	 (action (cdr (assoc "action" fstat))))
+    (if (string= action "delete")
+	(if (yes-or-no-p 
+	     "File already opened for delete; revert and edit it? ")
+	    (progn
+	      (if (yes-or-no-p "Preserve current contents? ")
+		  (let ((tempfile (format "%s.vc-register~" file)))
+		    (rename-file file tempfile)
+		    (p4-lowlevel-revert file)
+		    (delete-file file)
+		    (rename-file tempfile file))
+		(p4-lowlevel-revert file))
+	      (p4-lowlevel-edit file))
+	  (error "File %s already opened for delete." file))
+      (p4-lowlevel-add file))))
 
 (defun vc-p4-init-version ()
   "Returns `1', the default initial version for Perforce files."
