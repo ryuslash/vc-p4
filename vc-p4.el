@@ -6,6 +6,10 @@
 ;; Maintainer: Jonathan Kamens <jik@kamens.brookline.ma.us>
 
 ;; $Id$
+;; The path above is on the Perforce server public.perforce.com:1666.
+;; You can get this file using a P4 client talking to that depot, or
+;; from the URL
+;; http://public.perforce.com/guest/jonathan_kamens/vc-p4/vc-p4.el.
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
