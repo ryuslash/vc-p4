@@ -602,7 +602,6 @@ Annotate version VERSION if it's specified."
 		       (concat file 
 			       (p4-lowlevel-canonicalize-revision version))
 		     file))
-	(now (car (current-time)))
 	log-buffer times)
     (call-process vc-p4-annotate-command
 		  nil
@@ -620,9 +619,8 @@ Annotate version VERSION if it's specified."
 	     (year (string-to-number (match-string 2)))
 	     (month (string-to-number (match-string 3)))
 	     (day (string-to-number (match-string 4)))
-	     (then (car (encode-time 0 0 0 day month year)))
-	     (difference (- now then)))
-	(setq times (cons (cons change-no difference)
+	     (then (encode-time 0 0 0 day month year)))
+	(setq times (cons (cons change-no then)
 			  times))))
     (set-buffer buffer)
     (setq vc-p4-change-times times)))
@@ -637,7 +635,20 @@ line at point and the current time."
 		 (and (re-search-forward regex nil t)
 		      (forward-line 0)))
 	     (setq match (assoc (match-string 1) vc-p4-change-times)))
-	(cdr match)
+	(- (car (current-time)) (cadr match))
+      nil)))
+
+(defun vc-p4-annotate-time ()
+  "Returns the time of the next Perforce annotation at or after point,
+as a floating point fractional number of days."
+  (let ((regex (concat "^[[:space:]]*[[:digit:]]+[[:space:]]+"
+		       "[^[:space:]]+[[:space:]]+\\([[:digit:]]+\\)"))
+	match)
+    (if (and (or (looking-at regex)
+		 (and (re-search-forward regex nil t)
+		      (forward-line 0)))
+	     (setq match (assoc (match-string 1) vc-p4-change-times)))
+	(vc-annotate-convert-time (cdr match))
       nil)))
 
 (defun vc-p4-previous-version (file rev)
