@@ -786,7 +786,7 @@ as a floating point fractional number of days."
 (defun vc-p4-find-p4config (&optional dirname)
   "See if there is a $P4CONFIG file in DIRNAME or any of its parents.
 If DIRNAME is not specified, uses `default-directory'."
-  (let ((this-directory (or dirname default-directory))
+  (let ((this-directory (expand-file-name (or dirname default-directory)))
 	(p4config (getenv "P4CONFIG"))
 	child)
     (if (not p4config)
