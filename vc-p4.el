@@ -259,7 +259,9 @@ to t."
 (defcustom vc-p4-annotate-command "p4pr"
   "*Specifies the name of a command to call to annotate Perforce
 files.  I recommend //guest/jonathan_kamens/p4pr.perl in the Perforce
-repository public.perforce.com:1666."
+repository public.perforce.com:1666.  Note that you need a version of
+this script which accept `--after=date' to tell it how far back to
+trace."
   :type 'string
   :group 'vc)
 
@@ -602,12 +604,14 @@ Annotate version VERSION if it's specified."
 		       (concat file 
 			       (p4-lowlevel-canonicalize-revision version))
 		     file))
-	log-buffer times)
-    (call-process vc-p4-annotate-command
-		  nil
-		  buffer
-		  nil
-		  full-file)
+	(starting-date (if current-prefix-arg
+			   (read-string "Starting date: (default none) ")))
+	log-buffer times args)
+    (setq args (append (list vc-p4-annotate-command nil buffer nil)
+		       (if starting-date
+			   (list "--after" starting-date))
+		       (list full-file)))
+    (apply 'call-process args)
     ; Calculate the date of each revision, for later
     (setq log-buffer (p4-lowlevel-filelog file nil nil t))
     (set-buffer log-buffer)
