@@ -394,7 +394,7 @@ value with `-m'; if S-VAL is non-nil, pass that value with `-s'."
 	(l-list (if l-flag (list "-l")))
 	(m-list (if m-val (list "-m" (if (numberp m-val)
 					 (number-to-string m-val)
-				       mval))))
+				       m-val))))
 	(s-list (if s-val (list "-s" s-val))))
     (p4-lowlevel-command-or-error (append
 				   (list "changes")

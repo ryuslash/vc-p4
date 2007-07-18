@@ -57,6 +57,10 @@
 (eval-when-compile
   (require 'vc-hooks)
   (require 'vc)
+  (require 'ediff))
+;; FIXME: setq ediff-quit-hook maybe should be add-hook...
+
+(eval-and-compile
   (require 'p4-lowlevel))
 
 (if (not (memq 'P4 vc-handled-backends))
@@ -72,7 +76,7 @@
 
   (defun vc-default-show-log-entry (backend ver)
     (if (fboundp 'log-view-goto-rev)
-	(log-view-goto-rev rev)))
+	(log-view-goto-rev ver)))
   
   (defun vc-print-log ()
     "List the change log of the current buffer in a window."
@@ -259,7 +263,7 @@ The conflicts must be marked with rcsmerge conflict markers."
       (save-excursion
 	(set-buffer your-buffer)
 	(erase-buffer)
-	(insert-buffer result-buffer)
+	(insert-buffer-substring result-buffer)
 	(if (not (vc-call-backend backend 'resolve-select-yours))
 	    (progn
 	      (kill-buffer your-buffer)
@@ -269,12 +273,12 @@ The conflicts must be marked with rcsmerge conflict markers."
       
 	(set-buffer other-buffer)
 	(erase-buffer)
-	(insert-buffer result-buffer)
+	(insert-buffer-substring result-buffer)
 	(vc-call-backend backend 'resolve-select-theirs)
 
 	(set-buffer ancestor-buffer)
 	(erase-buffer)
-	(insert-buffer result-buffer)
+	(insert-buffer-substring result-buffer)
 	(goto-char (point-min))
 	(if (not (vc-call-backend backend 'resolve-select-original))
 	    (progn
@@ -310,7 +314,7 @@ The conflicts must be marked with rcsmerge conflict markers."
 		    (ediff-cleanup-mess)
 		    (set-buffer result)
 		    (erase-buffer)
-		    (insert-buffer buffer-C)
+		    (insert-buffer-substring buffer-C)
 		    (kill-buffer buffer-A)
 		    (kill-buffer buffer-B)
 		    (kill-buffer buffer-C)
