@@ -103,34 +103,6 @@
 			   ',(vc-workfile-version file))
 	  (set-buffer-modified-p nil))))))
 
-(defun vc-mode-line (file)
-  "Set `vc-mode' to display type of version control for FILE.
-The value is set in the current buffer, which should be the buffer
-visiting FILE."
-  (interactive (list buffer-file-name))
-  (if (not (vc-backend file))
-      (setq vc-mode nil)
-    (setq vc-mode (concat " " (if vc-display-status
-				  (vc-call mode-line-string file)
-				(symbol-name (vc-backend file)))))
-    ;; If the file is locked by some other user, make
-    ;; the buffer read-only.  Like this, even root
-    ;; cannot modify a file that someone else has locked.
-    (and (equal file (buffer-file-name))
-         (stringp (vc-state file))
-	 (setq buffer-read-only t))
-    ;; If the user is root, and the file is not owner-writable,
-    ;; then pretend that we can't write it
-    ;; even though we can (because root can write anything).
-    ;; This way, even root cannot modify a file that isn't locked.
-    (and (equal file (buffer-file-name))
-	 (not buffer-read-only)
-	 (zerop (user-real-uid))
-	 (zerop (logand (file-modes (buffer-file-name)) 128))
-	 (setq buffer-read-only t)))
-  (force-mode-line-update)
-  (vc-backend file))
-
 (if (not (fboundp 'vc-default-previous-version))
     (defun vc-previous-version (rev)
       "Guess the version number immediately preceding REV."
