@@ -103,54 +103,6 @@
 			   ',(vc-workfile-version file))
 	  (set-buffer-modified-p nil))))))
 
-(defun vc-register (&optional set-version comment)
-  "Register the current file into a version control system.
-With prefix argument SET-VERSION, allow user to specify initial version
-level.  If COMMENT is present, use that as an initial comment.
-
-The version control system to use is found by cycling through the list
-`vc-handled-backends'.  The first backend in that list which declares
-itself responsible for the file (usually because other files in that
-directory are already registered under that backend) will be used to
-register the file.  If no backend declares itself responsible, the
-first backend that could register the file is used."
-  (interactive "P")
-  (unless buffer-file-name (error "No visited file"))
-  (when (vc-backend buffer-file-name)
-    (if (vc-registered buffer-file-name)
-	(error "This file is already registered")
-      (unless (y-or-n-p "Previous master file has vanished.  Make a new one? ")
-	(error "Aborted"))))
-  ;; Watch out for new buffers of size 0: the corresponding file
-  ;; does not exist yet, even though buffer-modified-p is nil.
-  (if (and (not (buffer-modified-p))
-	   (zerop (buffer-size))
-	   (not (file-exists-p buffer-file-name)))
-      (set-buffer-modified-p t))
-  (vc-buffer-sync)
-
-  (vc-start-entry buffer-file-name
-                  (if set-version
-                      (read-string (format "Initial version level for %s: "
-					   (buffer-name)))
-		    (let ((backend (vc-responsible-backend buffer-file-name)))
-		      (if (vc-find-backend-function backend 'init-version)
-			  (vc-call-backend backend 'init-version)
-			vc-default-init-version)))
-                  (or comment (not vc-initial-comment))
-		  nil
-                  "Enter initial comment."
-		  (lambda (file rev comment)
-		    (message "Registering %s... " file)
-		    (let ((backend (vc-responsible-backend file t)))
-		      (vc-file-clearprops file)
-		      (vc-call-backend backend 'register file rev comment)
-		      (vc-file-setprop file 'vc-backend backend)
-		      (unless vc-make-backup-files
-			(make-local-variable 'backup-inhibited)
-			(setq backup-inhibited t)))
-		    (message "Registering %s... done" file))))
-
 (defun vc-mode-line (file)
   "Set `vc-mode' to display type of version control for FILE.
 The value is set in the current buffer, which should be the buffer
