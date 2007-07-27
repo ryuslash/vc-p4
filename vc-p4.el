@@ -468,6 +468,7 @@ comment COMMENT."
       (vc-p4-state file nil t)
       (vc-mode-line file))))
 
+;;; FIXME: this should not have a DESTFILE argument
 (defun vc-p4-checkout (file &optional editable rev destfile)
   (if (and editable destfile (not (string= file destfile)))
       (error "Can't lock a Perforce file in an alternate location."))
@@ -539,13 +540,23 @@ comment COMMENT."
   (let ((default-directory (file-name-directory file)))
     (p4-lowlevel-reopen file)))
 
-(defun vc-p4-print-log (file)
+(defun vc-p4-print-log (file &optional buffer)
   "Print Perforce log for FILE into *vc* buffer."
-  (set-buffer (get-buffer-create "*vc*"))
+  ;; `log-view-mode' needs to have the file name in order to function
+  ;; correctly. "p4 logview" does not print it, so we insert it here by
+  ;; hand.
+
+  ;; `vc-do-command' creates the buffer, but we need it before running
+  ;; the command.
+  (vc-setup-buffer buffer)
   (let ((inhibit-read-only t)
 	(default-directory (file-name-directory file)))
-    (erase-buffer)
-    (p4-lowlevel-filelog file (current-buffer) t t)))
+    (with-current-buffer
+	buffer
+      (p4-lowlevel-filelog file (current-buffer) t t)
+      ;; Insert the file name at the beginning.
+      (goto-char (point-min))
+      (insert "File:        " (file-name-nondirectory file) "\n"))))
 
 (defun vc-p4-show-log-entry (version)
   "Make sure Perforce log entry for VERSION is displayed in the
@@ -619,6 +630,28 @@ files under the default directory otherwise."
 	  (kill-line)))
     (message "Computing change log entries... done")))
 
+(defvar log-view-message-re)
+(defvar log-view-file-re)
+(defvar log-view-font-lock-keywords)
+
+(define-derived-mode vc-p4-log-view-mode log-view-mode "P4-Log-View"
+  (require 'add-log) ;; we need the faces add-log
+  (set (make-local-variable 'log-view-file-re) "^File:[ \t]+\\(.+\\)")
+  (set (make-local-variable 'log-view-message-re)
+       "^#\\([0-9]+\\) .*")
+  (set (make-local-variable 'log-view-font-lock-keywords)
+       (append `((,log-view-message-re . 'log-view-message-face)
+		 (,log-view-file-re . 'log-view-file-face))
+	'(("^user:[ \t]+\\([A-Za-z0-9_.+-]+@[A-Za-z0-9_.-]+\\)"
+	   (1 'change-log-email))
+	  ;; Handle the case:
+	  ;; user: FirstName LastName <foo@bar>
+	  ("^user:[ \t]+\\([^<(]+?\\)[ \t]*[(<]\\([A-Za-z0-9_.+-]+@[A-Za-z0-9_.-]+\\)[>)]"
+	   (1 'change-log-name)
+	   (2 'change-log-email))
+	  ("^date: \\(.+\\)" (1 'change-log-date))
+	  ("^summary:[ \t]+\\(.+\\)" (1 'log-view-message))))))
+
 (defun vc-p4-diff (file &optional rev1 rev2)
   "Do a Perforce diff into the *vc-diff* buffer."
   (let ((buffer (get-buffer-create "*vc-diff*"))
@@ -663,11 +696,11 @@ Annotate version VERSION if it's specified."
 	(starting-date (if current-prefix-arg
 			   (read-string "Starting date: (default none) ")))
 	log-buffer times args)
-    (setq args (append (list vc-p4-annotate-command nil buffer nil)
+    (setq args (append (list  buffer nil vc-p4-annotate-command nil)
 		       (if starting-date
 			   (list "--after" starting-date))
 		       (list full-file)))
-    (apply 'call-process args)
+    (apply 'vc-do-command args)
     ; Calculate the date of each revision, for later
     (setq log-buffer (p4-lowlevel-filelog file nil nil t))
     (set-buffer log-buffer)
@@ -702,14 +735,25 @@ line at point and the current time."
   "Returns the time of the next Perforce annotation at or after point,
 as a floating point fractional number of days."
   (let ((regex (concat "^[[:space:]]*[[:digit:]]+[[:space:]]+"
-		       "[^[:space:]]+[[:space:]]+\\([[:digit:]]+\\)"))
+		       "[^[:space:]]+[[:space:]]+\\([[:digit:]]+\\)"
+		       "[[:space:]]+\\([[:digit:]]+\\)"))
 	match)
     (if (and (or (looking-at regex)
 		 (and (re-search-forward regex nil t)
 		      (forward-line 0)))
 	     (setq match (assoc (match-string 1) vc-p4-change-times)))
-	(vc-annotate-convert-time (cdr match))
+	(progn
+	  (goto-char (match-end 0))
+	  (vc-annotate-convert-time (cdr match)))
       nil)))
+
+(defun vc-p4-annotate-extract-revision-at-line ()
+  (save-excursion
+    (let ((regex (concat "^[[:space:]]*[[:digit:]]+[[:space:]]+"
+			 "[^[:space:]]+[[:space:]]+\\([[:digit:]]+\\)"
+			 "[[:space:]]+\\([[:digit:]]+\\)")))
+      (beginning-of-line)
+      (if (looking-at regex) (match-string-no-properties 2)))))
 
 (defun vc-p4-previous-version (file rev)
   "Return the Perforce revision of FILE prior to REV."
@@ -816,5 +860,10 @@ third subblock in each conflict block."
         (goto-char block-start)
         (insert replacement)))
     (if block-start t nil)))
+
+(defun vc-p4-command (buffer okstatus file &rest flags)
+  "A wrapper around `vc-do-command' for use in vc-p4.el.
+The difference to vc-do-command is that this function always invokes `p4'."
+  (apply 'vc-do-command buffer okstatus "p4" file flags))
 
 (provide 'vc-p4)
