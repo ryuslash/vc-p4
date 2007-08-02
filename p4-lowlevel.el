@@ -531,15 +531,15 @@ files, then returns a list of lists of field-name/value elements."
 	      (setq lists (cons (nreverse values) lists))
 	      (setq values nil)))
 	(setq values (cons (cons field value) values))))
-    (if values
-	(setq lists (cons (nreverse values) lists)))
+    (when values
+      (setq lists (cons (nreverse values) lists)))
     (if (= (length lists) 1)
 	(car lists)
       lists)))
 
 (defun p4-lowlevel-info ()
   "Return an alist representing the output of `p4 info'."
-  (let* ((base-alist (p4-lowlevel-command-or-error "info"))
+  (let* ((base-alist (p4-lowlevel-command-or-error "info" nil nil t))
          (info-elements (p4-lowlevel-re-assoc "^info" base-alist))
          line tag value info-alist element)
     (while info-elements
