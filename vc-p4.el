@@ -618,15 +618,15 @@ files under the default directory otherwise."
 (defun vc-p4-diff (files &optional rev1 rev2 buff)
   "Do a Perforce diff."
   (let* ((buffer (or (bufferp buff) (get-buffer-create "*vc-diff*")))
-	 (workfile-version (vc-file-getprop file 'vc-workfile-version))
-	 (inhibit-read-only t)
 	 ;; In emacs-23 vc-diff has a list of files as a parameter,
 	 ;; before it used to be just a single file. We don't support
 	 ;; that interface yet, so just use the first file in the list.
-	(file (if (listp files) (car files) files)))
+	(file (if (listp files) (car files) files))
+	(workfile-version (vc-file-getprop file 'vc-workfile-version))
+	(inhibit-read-only t))
     (if (not rev1)
 	(if (not rev2)
-	    (if (string= (vc-file-getprop buffer-file-name 'vc-p4-action)
+	    (if (string= (vc-file-getprop file 'vc-p4-action)
 			 "add")
 		; I can't figure out anything better to do here than
 		; to use diff-switches.  It would be so much easier if
