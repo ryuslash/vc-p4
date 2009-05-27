@@ -285,33 +285,6 @@ compare non-open files to the depot version."
       (vc-file-setprop file 'vc-workfile-version haveRev)
       state)))
 
-; Here's something that would work faster, but I'm not going to
-; actually try to use this unless I find that it's really too slow to
-; just do all the work all the time.
-;(defun vc-p4-state-heuristic (file)
-;  "Estimates the current version control state of FILE in Perforce."
-;  (if (and (file-exists-p file)
-;	   (file-writable-p file))
-;      'edited
-;    'up-to-date))
-
-(defun vc-p4-dir-state (dir)
-  "Determines the current version control state of the files in DIR in
-Perforce and sets the appropriate VC properties."
-  (let ((lists (p4-lowlevel-fstat (format "%s/*" dir) nil t))
-	this-list this-file this-action)
-    (if (stringp (caar lists))
-	(setq lists (list lists)))
-    (while lists
-      (setq this-list (car lists)
-	    lists (cdr lists)
-	    this-file (cdr (assoc "clientFile" this-list))
-	    this-action (cdr (or (assoc "action" this-list)
-				 (assoc "headAction" this-list))))
-      (if (and this-file
-	       (not (string= this-action "delete")))
-	  (vc-p4-state this-file this-list)))))
-
 (defun vc-p4-dir-status (dir update-function)
   "Find information for `vc-dir'."
   ;; XXX: this should be asynchronous.
