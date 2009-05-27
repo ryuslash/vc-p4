@@ -1,14 +1,19 @@
 ;;; vc-p4.el --- Integrate Perforce support into VC mode in Emacs 21
 
+;; Copyright (C) 2009 Magnus Henoch
 ;; Copyright (C) 2002 Curl Corporation.
 
 ;; Author: Jonathan Kamens <jik@kamens.brookline.ma.us>
-;; Maintainer: Jonathan Kamens <jik@kamens.brookline.ma.us>
+;; Maintainer: Magnus Henoch <magnus.henoch@gmail.com>
 
 ;; $Id$
 ;; The path above is on the Perforce server public.perforce.com:1666.
 ;; You can get this file using a P4 client talking to that depot, or
 ;; from the URL
+;; http://public.perforce.com/guest/magnus_henoch/vc-p4/vc-p4.el.
+
+;; This version is intended for Emacs 23 and later; for Emacs 22 or
+;; earlier, you might want the original version:
 ;; http://public.perforce.com/guest/jonathan_kamens/vc-p4/vc-p4.el.
 
 ;; This program is free software; you can redistribute it and/or modify
