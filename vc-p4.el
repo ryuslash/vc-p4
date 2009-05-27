@@ -310,6 +310,23 @@ Perforce and sets the appropriate VC properties."
 	       (not (string= this-action "delete")))
 	  (vc-p4-state this-file this-list)))))
 
+(defun vc-p4-dir-status (dir update-function)
+  "Find information for `vc-dir'."
+  ;; XXX: this should be asynchronous.
+  (let ((lists (p4-lowlevel-fstat (format "%s/*" (expand-file-name dir)) nil t)))
+    (when (stringp (caar lists))
+      (setq lists (list lists)))
+    (dolist (this-list lists)
+      (let ((this-file (cdr (assoc "clientFile" this-list)))
+            (this-action (cdr (assoc "action" this-list))))
+        (when this-action
+          (funcall update-function
+                   (list
+                    (list (file-relative-name this-file dir)
+                          (intern this-action)))
+                   t))))
+    (funcall update-function nil nil)))
+
 (defun vc-p4-workfile-version (file)
   "Returns the Perforce version of FILE."
   (vc-p4-state file)
