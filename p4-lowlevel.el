@@ -421,6 +421,8 @@ the file on disk.  Uses `p4-lowlevel-diff-switches' to determine flags
 to pass to `p4 diff'.  If optional BUFFER is non-nil, put output in
 that buffer."
   (setq rev (p4-lowlevel-canonicalize-revision rev))
+  (when (file-directory-p file)
+    (setq file (concat file "/...")))
   (let* ((file-spec (if rev (concat file rev) file))
          (diff-args (append (list "diff") p4-lowlevel-diff-switches
                             (list "-f" "-t" file-spec)))
