@@ -245,12 +245,13 @@ specify a starting date when you run C-u C-x v g."
 	(vc-p4-state file fstat)
 	t))))
 
-(defun vc-p4-state (file &optional fstat-list force)
-  "Returns the current version control state of FILE in Perforce.  If
-optional FSTAT-LIST is non-nil, use that list of attributes from
-p4-lowlevel-fstat instead of calling it.  If optional FORCE is
-non-nil, refetch all properties even if properties were previously
-fetched."
+(defun vc-p4-state (file &optional fstat-list force dont-compare-nonopened)
+  "Returns the current version control state of FILE in Perforce.
+If optional FSTAT-LIST is non-nil, use that list of attributes
+from p4-lowlevel-fstat instead of calling it.  If optional FORCE
+is non-nil, refetch all properties even if properties were
+previously fetched.  If DONT-COMPARE-NONOPENED is non-nil, don't
+compare non-open files to the depot version."
   (if (and (not force) (vc-file-getprop file 'vc-p4-did-fstat))
       (vc-file-getprop file 'vc-state)
     (let* (
@@ -266,7 +267,8 @@ fetched."
 			  (if (equal headRev haveRev)
 			      'edited
 			    'needs-merge)))
-		    (if (p4-lowlevel-diff-s file "e")
+		    (if (and (not dont-compare-nonopened)
+                             (p4-lowlevel-diff-s file "e"))
 			'unlocked-changes
 		      (if (equal headRev haveRev)
 		      'up-to-date
@@ -313,18 +315,18 @@ Perforce and sets the appropriate VC properties."
 (defun vc-p4-dir-status (dir update-function)
   "Find information for `vc-dir'."
   ;; XXX: this should be asynchronous.
-  (let ((lists (p4-lowlevel-fstat (format "%s/*" (expand-file-name dir)) nil t)))
+  (let ((lists (p4-lowlevel-fstat 
+                (format "%s/..." (directory-file-name (expand-file-name dir)))
+                nil t)))
     (when (stringp (caar lists))
       (setq lists (list lists)))
     (dolist (this-list lists)
-      (let ((this-file (cdr (assoc "clientFile" this-list)))
-            (this-action (cdr (assoc "action" this-list))))
-        (when this-action
-          (funcall update-function
-                   (list
-                    (list (file-relative-name this-file dir)
-                          (intern this-action)))
-                   t))))
+      (let* ((this-file (cdr (assoc "clientFile" this-list)))
+             (state (vc-p4-state this-file this-list t t)))
+        (funcall update-function
+                 (list
+                  (list (file-relative-name this-file dir) state))
+                 t)))
     (funcall update-function nil nil)))
 
 (defun vc-p4-workfile-version (file)
