@@ -712,13 +712,13 @@ Optional arg VERSION is a version to annotate from."
     (if (string-match "\\(.*\\)@\\([0-9]+\\)" file-spec)
 	(progn
 	  (setq file-name (match-string 1 file-spec))
-	  (setq change (string-to-int (match-string 2 file-spec)))))
+	  (setq change (string-to-number (match-string 2 file-spec)))))
 
     ;; we asked for blame constrained by a revision
     (if (string-match "\\(.*\\)#\\([0-9]+\\)" file-spec)
 	(progn
 	  (setq file-name (match-string 1 file-spec))
-	  (setq head-rev (string-to-int (match-string 2 file-spec)))))
+	  (setq head-rev (string-to-number (match-string 2 file-spec)))))
 
     ;; make sure the filespec is unambiguous
     ;;(p4-exec-p4 buffer (list "files" file-name) t)
@@ -750,8 +750,8 @@ Optional arg VERSION is a version to annotate from."
 
 	  ;; a non-branch change:
 	  (if (looking-at blame-change-regex)
-	      (let ((rev (string-to-int (match-string 1)))
-		    (ch (string-to-int (match-string 2)))
+	      (let ((rev (string-to-number (match-string 1)))
+		    (ch (string-to-number (match-string 2)))
 		    (op (match-string 3))
 		    (date (match-string 4))
 		    (author (match-string 5)))
@@ -818,11 +818,11 @@ Optional arg VERSION is a version to annotate from."
 	      ;;(set-buffer buffer)
 	      (goto-char (point-max))
 	      (while (re-search-backward blame-revision-regex nil t)
-		(let ((la (string-to-int (match-string 1)))
-		      (lb (string-to-int (match-string 2)))
+		(let ((la (string-to-number (match-string 1)))
+		      (lb (string-to-number (match-string 2)))
 		      (op (match-string 3))
-		      (ra (string-to-int (match-string 4)))
-		      (rb (string-to-int (match-string 5))))
+		      (ra (string-to-number (match-string 4)))
+		      (rb (string-to-number (match-string 5))))
 		  (if (= lb 0)
 		      (setq lb la))
 		  (if (= rb 0)
@@ -860,7 +860,7 @@ Optional arg VERSION is a version to annotate from."
 	  (move-to-column 0)
 	  (insert (format "%10s %7s %6s %4s\n" "Date" "Author" "Change"  "Rev"))
 	  (while (setq line (vc-p4-read-output ch-buffer))
-	    (setq cnum (string-to-int line))
+	    (setq cnum (string-to-number line))
 	    (if (and nil (= cnum old-cnum))
 		(insert (format "%29s " ""))
 
