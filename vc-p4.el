@@ -174,7 +174,7 @@ compare non-open files to the depot version."
                  t)))
     (funcall update-function nil nil)))
 
-(defun vc-p4-workfile-version (file)
+(defun vc-p4-working-revision (file)
   "Returns the Perforce version of FILE."
   (vc-p4-state file)
   (vc-file-getprop file 'vc-workfile-version))
