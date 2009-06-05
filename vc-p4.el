@@ -263,20 +263,18 @@ administered by Perforce."
   (p4-lowlevel-print file rev buffer t))
 
 (defun vc-p4-checkin (files rev comment)
-  "Check FILE into Perforce.  Error if REV is non-nil.  Check in with
+  "Check FILES into Perforce.  Error if REV is non-nil.  Check in with
 comment COMMENT."
   (if rev
       (error "Can't specify revision for Perforce checkin."))
-  ;; In emacs-23 vc-checkin has a list of files as a parameter, before
-  ;; it used to be just a single file. We don't support that interface
-  ;; yet, so just use the first file in the list.
-  (let* ((file (if (listp files) (car files) files))
-	 (default-directory (file-name-directory file))
+  (let* (;; XXX: default-directory?  this should work for most (all?) cases
+	 (default-directory (file-name-directory (car files)))
 	 (change-buffer (p4-lowlevel-change))
 	 (indent-tabs-mode 1)
 	 insertion-start change-number)
-    (if (vc-p4-has-unresolved-conflicts-p file)
-	(error "File %s has unresolved conflicts" file))
+    (dolist (file files)
+      (if (vc-p4-has-unresolved-conflicts-p file)
+	  (error "File %s has unresolved conflicts" file)))
     (save-excursion
       (set-buffer change-buffer)
       (goto-char (point-min))
@@ -287,13 +285,14 @@ comment COMMENT."
       (indent-rigidly insertion-start (point) 8)
       (re-search-forward "^Files:\\s-*\n")
       (delete-region (point) (point-max))
-      (insert "\t" (vc-file-getprop file 'vc-p4-depot-file) "\n")
+      (dolist (file files)
+	(insert "\t" (vc-file-getprop file 'vc-p4-depot-file) "\n"))
       (setq change-number (p4-lowlevel-change (current-buffer) t))
       (p4-lowlevel-change (current-buffer) change-number)
       (p4-lowlevel-submit (current-buffer))
       ; Update its properties
-      (vc-p4-state file nil t)
-      (vc-mode-line file))))
+      (dolist (file files)
+	(vc-p4-state file nil t)))))
 
 ;;; FIXME: this should not have a DESTFILE argument
 (defun vc-p4-checkout (file &optional editable rev destfile)
