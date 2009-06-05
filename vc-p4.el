@@ -243,7 +243,7 @@ special case of a Perforce file that is added but not yet committed."
 	  (error "File %s already opened for delete." file))
       (p4-lowlevel-add file))))
 
-(defun vc-p4-init-version ()
+(defun vc-p4-init-revision ()
   "Returns `1', the default initial version for Perforce files."
   "1")
 
