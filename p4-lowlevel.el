@@ -142,6 +142,10 @@ block of untagged text (including newlines other than the last one).
 The alist is in the same order as the contents of the buffer."
   (save-excursion
     (if buffer (set-buffer buffer))
+    ;; Strip CR from end of line
+    (goto-char (point-min))
+    (while (search-forward "\r" nil t)
+      (delete-char -1))
     (let (alist tag value
                 (last-match-end (point-min)))
       (goto-char last-match-end)
