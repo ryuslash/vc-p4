@@ -33,8 +33,8 @@
 
 ;;; Commentary:
 
-;; This file adds support for Perforce to VC mode in Emacs 21, 22 and any
-;; other Emacs variant which uses the VC mode included in Emacs 21.
+;; This file adds support for Perforce to VC mode in Emacs 23 and any
+;; other Emacs variant which uses the VC mode included in Emacs 23.
 ;;
 ;; To use this file, you also need p4-lowlevel.el somewhere in your
 ;; load path (or load it explicitly with "load" if it's not in your
