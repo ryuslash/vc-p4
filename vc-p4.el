@@ -132,6 +132,7 @@ compare non-open files to the depot version."
 	   (haveRev (cdr (assoc "haveRev" alist)))
 	   (depotFile (cdr (assoc "depotFile" alist)))
 	   (action  (cdr (assoc "action" alist)))
+           (headAction (cdr (assoc "headAction" alist)))
 	   (state 
             (cond
              (action
@@ -144,7 +145,9 @@ compare non-open files to the depot version."
              ((and (not dont-compare-nonopened)
                    (p4-lowlevel-diff-s file "e"))
               'unlocked-changes)
-             ((equal headRev haveRev)
+             ((or
+               (equal headRev haveRev)
+               (and (null haveRev) (string= headAction "delete")))
               'up-to-date)
              (t
               'needs-patch)))
