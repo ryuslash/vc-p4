@@ -168,10 +168,11 @@ compare non-open files to the depot version."
     (dolist (this-list lists)
       (let* ((this-file (cdr (assoc "clientFile" this-list)))
              (state (vc-p4-state this-file this-list t t)))
-        (funcall update-function
-                 (list
-                  (list (file-relative-name this-file dir) state))
-                 t)))
+        (unless (eq state 'up-to-date)
+          (funcall update-function
+                   (list
+                    (list (file-relative-name this-file dir) state))
+                   t))))
     (funcall update-function nil nil)))
 
 (defun vc-p4-working-revision (file)
