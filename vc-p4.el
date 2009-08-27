@@ -132,19 +132,22 @@ compare non-open files to the depot version."
 	   (haveRev (cdr (assoc "haveRev" alist)))
 	   (depotFile (cdr (assoc "depotFile" alist)))
 	   (action  (cdr (assoc "action" alist)))
-	   (state (if action
-		      (let ((opened (p4-lowlevel-opened file)))
-			(if (string-match " by \\([^@]+\\)@" opened)
-			    (match-string 1 opened)
-			  (if (equal headRev haveRev)
-			      'edited
-			    'needs-merge)))
-		    (if (and (not dont-compare-nonopened)
-                             (p4-lowlevel-diff-s file "e"))
-			'unlocked-changes
-		      (if (equal headRev haveRev)
-		      'up-to-date
-		      'needs-patch))))
+	   (state 
+            (cond
+             (action
+              (let ((opened (p4-lowlevel-opened file)))
+                (if (string-match " by \\([^@]+\\)@" opened)
+                    (match-string 1 opened)
+                  (if (equal headRev haveRev)
+                      'edited
+                    'needs-merge))))
+             ((and (not dont-compare-nonopened)
+                   (p4-lowlevel-diff-s file "e"))
+              'unlocked-changes)
+             ((equal headRev haveRev)
+              'up-to-date)
+             (t
+              'needs-patch)))
 	   )
       (vc-file-setprop file 'vc-p4-did-fstat t)
       (vc-file-setprop file 'vc-p4-depot-file depotFile)
