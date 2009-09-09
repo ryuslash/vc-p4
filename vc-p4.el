@@ -126,42 +126,44 @@ previously fetched.  If DONT-COMPARE-NONOPENED is non-nil, don't
 compare non-open files to the depot version."
   (if (and (not force) (vc-file-getprop file 'vc-p4-did-fstat))
       (vc-file-getprop file 'vc-state)
-    (let* (
-	   (alist (or fstat-list (p4-lowlevel-fstat file nil)))
-	   (headRev (cdr (assoc "headRev" alist)))
-	   (haveRev (cdr (assoc "haveRev" alist)))
-	   (depotFile (cdr (assoc "depotFile" alist)))
-	   (action  (cdr (assoc "action" alist)))
-           (headAction (cdr (assoc "headAction" alist)))
-	   (state 
-            (cond
-             (action
-              (let ((opened (p4-lowlevel-opened file)))
-                (if (string-match " by \\([^@]+\\)@" opened)
-                    (match-string 1 opened)
-                  (if (equal headRev haveRev)
-                      'edited
-                    'needs-merge))))
-             ((and (not dont-compare-nonopened)
-                   (p4-lowlevel-diff-s file "e"))
-              'unlocked-changes)
-             ((or
-               (equal headRev haveRev)
-               (and (null haveRev) (string= headAction "delete")))
-              'up-to-date)
-             (t
-              'needs-patch)))
-	   )
-      (vc-file-setprop file 'vc-p4-did-fstat t)
-      (vc-file-setprop file 'vc-p4-depot-file depotFile)
-      (vc-file-setprop file 'vc-p4-action action)
-      (vc-file-setprop file 'vc-backend 'P4)
-      (vc-file-setprop file 'vc-checkout-model 'announce)
-      (vc-file-setprop file 'vc-latest-version headRev)
-      (vc-file-setprop file 'vc-name file)
-      (vc-file-setprop file 'vc-state state)
-      (vc-file-setprop file 'vc-workfile-version haveRev)
-      state)))
+    (let ((alist (or fstat-list (p4-lowlevel-fstat file nil t))))
+      (if (null alist)
+          'unregistered
+        (let* (
+               (headRev (cdr (assoc "headRev" alist)))
+               (haveRev (cdr (assoc "haveRev" alist)))
+               (depotFile (cdr (assoc "depotFile" alist)))
+               (action  (cdr (assoc "action" alist)))
+               (headAction (cdr (assoc "headAction" alist)))
+               (state 
+                (cond
+                 (action
+                  (let ((opened (p4-lowlevel-opened file)))
+                    (if (string-match " by \\([^@]+\\)@" opened)
+                        (match-string 1 opened)
+                      (if (equal headRev haveRev)
+                          'edited
+                        'needs-merge))))
+                 ((and (not dont-compare-nonopened)
+                       (p4-lowlevel-diff-s file "e"))
+                  'unlocked-changes)
+                 ((or
+                   (equal headRev haveRev)
+                   (and (null haveRev) (string= headAction "delete")))
+                  'up-to-date)
+                 (t
+                  'needs-patch)))
+               )
+          (vc-file-setprop file 'vc-p4-did-fstat t)
+          (vc-file-setprop file 'vc-p4-depot-file depotFile)
+          (vc-file-setprop file 'vc-p4-action action)
+          (vc-file-setprop file 'vc-backend 'P4)
+          (vc-file-setprop file 'vc-checkout-model 'announce)
+          (vc-file-setprop file 'vc-latest-version headRev)
+          (vc-file-setprop file 'vc-name file)
+          (vc-file-setprop file 'vc-state state)
+          (vc-file-setprop file 'vc-workfile-version haveRev)
+          state)))))
 
 (defun vc-p4-dir-status (dir update-function)
   "Find information for `vc-dir'."
