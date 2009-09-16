@@ -426,7 +426,7 @@ to pass to `p4 diff'.  If optional BUFFER is non-nil, put output in
 that buffer."
   (setq rev (p4-lowlevel-canonicalize-revision rev))
   (when (file-directory-p file)
-    (setq file (concat file "/...")))
+    (setq file (concat (directory-file-name file) "/...")))
   (let* ((file-spec (if rev (concat file rev) file))
          (diff-args (append (list "diff") p4-lowlevel-diff-switches
                             (list "-f" "-t" file-spec)))
