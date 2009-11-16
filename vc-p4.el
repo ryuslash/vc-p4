@@ -492,43 +492,68 @@ files under the default directory otherwise."
 	  ("^date: \\(.+\\)" (1 'change-log-date))
 	  ("^summary:[ \t]+\\(.+\\)" (1 'log-view-message))))))
 
-(defun vc-p4-diff (files &optional rev1 rev2 buff)
+(defun vc-p4-diff (file-or-files &optional rev1 rev2 buff)
   "Do a Perforce diff."
   (let* ((buffer (or (bufferp buff) (get-buffer-create "*vc-diff*")))
-	 ;; In emacs-23 vc-diff has a list of files as a parameter,
-	 ;; before it used to be just a single file. We don't support
-	 ;; that interface yet, so just use the first file in the list.
-	(file (if (listp files) (car files) files))
-	(workfile-version (vc-file-getprop file 'vc-workfile-version))
-	(inhibit-read-only t))
-    (if (not rev1)
-	(if (not rev2)
-	    (if (string= (vc-file-getprop file 'vc-p4-action)
-			 "add")
-		; I can't figure out anything better to do here than
-		; to use diff-switches.  It would be so much easier if
-	        ; "p4 diff" and "p4 diff2" accepted real diff
-	        ; arguments instead of arguments with "-d" in front of
-	        ; them.
-		(progn
-		  (set-buffer buffer)
-		  (erase-buffer)
-		  (apply 'call-process
-			 (append
-			  (list diff-command
-				nil
-				buffer
-				nil)
-			  (if (listp diff-switches)
-			      diff-switches
-			    (list diff-switches))
-			  (list "/dev/null"
-				file))))
-	      (p4-lowlevel-diff file nil buffer))
-	  (p4-lowlevel-diff2 file file workfile-version rev2 buffer))
-      (if rev2
-	  (p4-lowlevel-diff2 file file rev1 rev2 buffer)
-	(p4-lowlevel-diff file rev1 buffer)))))
+         (files (if (atom file-or-files) (list file-or-files) file-or-files))
+         (inhibit-read-only t))
+    (cond
+     ((and (null rev1) (null rev2))
+      (let (added modified)
+        (dolist (file files)
+          (if (string= (vc-file-getprop file 'vc-p4-action) "add")
+              (push file added)
+            (push file modified)))
+        (setq added (nreverse added)
+              modified (nreverse modified))
+
+        ;; For added files, Perforce can't give us what we want
+        ;; (diff the new file against /dev/null), so we do it
+        ;; ourselves.
+        (with-current-buffer buffer
+          (erase-buffer)
+          (dolist (file added)
+            (apply 'call-process
+                   (append
+                    (list diff-command
+                          nil
+                          buffer
+                          nil)
+                    (if (listp diff-switches)
+                        diff-switches
+                      (list diff-switches))
+                    (list "/dev/null"
+                          file))))
+
+          ;; Now diff all the modified files in a single call to the server.
+          (when modified
+            (let (temp-buffer)
+              (unwind-protect
+                  (progn
+                    (setq temp-buffer (p4-lowlevel-diff modified))
+                    (insert-buffer-substring temp-buffer))
+                (when (buffer-live-p temp-buffer)
+                  (kill-buffer temp-buffer))))))))
+
+     (t
+      ;; At this point things get complicated.  Let's just make one
+      ;; request per file and hope the server administrator doesn't
+      ;; mind.
+      (with-current-buffer buffer
+        (let (temp-buffer)
+          (dolist (file files)
+            (setq temp-buffer
+                  (cond
+                   ((and (not rev1) rev2)
+                    (p4-lowlevel-diff2 file file
+                                       (vc-file-getprop file 'vc-workfile-version)
+                                       rev2))
+                   ((and rev1 rev2)
+                    (p4-lowlevel-diff2 file file rev1 rev2))
+                   ((and rev1 (not rev2))
+                    (p4-lowlevel-diff file rev1))))
+            (insert-buffer-substring temp-buffer)
+            (kill-buffer temp-buffer))))))))
 
 (defun vc-p4-annotate-command (file buffer &optional version)
   "Annotate FILE into BUFFER file using `vc-p4-annotate-command'.

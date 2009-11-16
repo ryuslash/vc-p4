@@ -303,9 +303,7 @@ buffer, then puts output in that buffer.  Returns the buffer."
     (save-excursion
       (set-buffer output-buffer)
       (erase-buffer)
-      (insert (p4-lowlevel-info-lines output-alist))
-      (if (setq text (p4-lowlevel-text output-alist))
-          (insert text))
+      (insert (p4-lowlevel-lines-matching-tag "^\\(text\\|info\\)" output-alist))
       output-buffer)))
 
 (defun p4-lowlevel-command-messages ()
@@ -417,19 +415,27 @@ value with `-m'; if S-VAL is non-nil, pass that value with `-s'."
 ; DO need to support diffing a single file.
 ; Do NOT need to support diffing multiple files.
 
-(defun p4-lowlevel-diff (file &optional rev buffer)
+(defun p4-lowlevel-diff (files &optional rev buffer)
   "Run `p4 diff' on FILE at revision REV and return a buffer
 containing the results.  REV is in the syntax described by `p4 help
 revisions'.  If REV is nil, compare the client's sync'd revision to
 the file on disk.  Uses `p4-lowlevel-diff-switches' to determine flags
 to pass to `p4 diff'.  If optional BUFFER is non-nil, put output in
 that buffer."
+  (unless (listp files)
+    (setq files (list files)))
   (setq rev (p4-lowlevel-canonicalize-revision rev))
-  (when (file-directory-p file)
-    (setq file (concat (directory-file-name file) "/...")))
-  (let* ((file-spec (if rev (concat file rev) file))
+  (setq files
+        (mapcar (lambda (file)
+                  (if (file-directory-p file)
+                      (concat (directory-file-name file) "/...")
+                    file))
+                files))
+  (let* ((file-specs (if rev
+                         (mapcar (lambda (file) (concat file rev)) files)
+                       files))
          (diff-args (append (list "diff") p4-lowlevel-diff-switches
-                            (list "-f" "-t" file-spec)))
+                            (list "-f" "-t") file-specs))
          (buffer (p4-lowlevel-command-into-buffer diff-args 
 						  (or buffer "diff"))))
     buffer))
