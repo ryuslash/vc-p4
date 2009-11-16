@@ -553,7 +553,17 @@ files under the default directory otherwise."
                    ((and rev1 (not rev2))
                     (p4-lowlevel-diff file rev1))))
             (insert-buffer-substring temp-buffer)
-            (kill-buffer temp-buffer))))))))
+            (kill-buffer temp-buffer))))))
+
+    ;; Emacs doesn't understand Perforce's file headers, so we add
+    ;; them ourselves.
+    (with-current-buffer buffer
+      (goto-char (point-min))
+      (while (re-search-forward "^==== \\(.+#[0-9]+\\) - \\(.+\\) ====$" nil t)
+        (let ((depot-name (match-string 1))
+              (filename (match-string 2)))
+          (insert "\n--- " depot-name
+                  "\n+++ " filename))))))
 
 (defun vc-p4-annotate-command (file buffer &optional version)
   "Annotate FILE into BUFFER file using `vc-p4-annotate-command'.
