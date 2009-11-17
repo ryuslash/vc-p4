@@ -331,7 +331,13 @@ comment COMMENT."
 (defun vc-p4-revert (file contents-done)
   "Revert FILE in Perforce.  Ignores CONTENTS-DONE."
   (let ((action (vc-file-getprop file 'vc-p4-action)))
-    (p4-lowlevel-revert file)
+    (cond
+     ((null action)
+      ;; If Perforce doesn't believe that we edited the file, we have
+      ;; to use sync instead of revert.
+      (p4-lowlevel-sync file (vc-working-revision file) t))
+     (t
+      (p4-lowlevel-revert file)))
     (if (string= action "add")
 	(vc-file-clearprops file)
       (vc-p4-state file nil t))))
