@@ -381,7 +381,7 @@ comment COMMENT."
   (let ((default-directory (file-name-directory file)))
     (p4-lowlevel-reopen file)))
 
-(defun vc-p4-print-log (files &optional buffer)
+(defun vc-p4-print-log (files &optional buffer shortlog limit)
   "Print Perforce log for FILE into *vc* buffer."
   ;; `log-view-mode' needs to have the file name in order to function
   ;; correctly. "p4 logview" does not print it, so we insert it here by
@@ -399,7 +399,7 @@ comment COMMENT."
 	 (default-directory (file-name-directory file)))
     (with-current-buffer
 	buffer
-      (p4-lowlevel-filelog file (current-buffer) t t)
+      (p4-lowlevel-filelog file (current-buffer) (not shortlog) nil limit)
       ;; Insert the file name at the beginning.
       (goto-char (point-min))
       (insert "File:        " (file-name-nondirectory file) "\n"))))
