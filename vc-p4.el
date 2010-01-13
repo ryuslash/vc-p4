@@ -188,6 +188,11 @@ compare non-open files to the depot version."
   (vc-p4-state file)
   (vc-file-getprop file 'vc-workfile-version))
 
+(defun vc-p4-previous-revision (file rev)
+  (let ((newrev (1- (string-to-number rev))))
+    (when (< 0 newrev)
+      (number-to-string newrev))))
+
 (defun vc-p4-latest-on-branch-p (file)
   "Returns non-nil if the Perforce version of FILE is the head
 revision."
