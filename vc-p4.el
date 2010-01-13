@@ -1,6 +1,6 @@
 ;;; vc-p4.el --- Integrate Perforce support into VC mode in Emacs 21
 
-;; Copyright (C) 2009 Magnus Henoch
+;; Copyright (C) 2009, 2010 Magnus Henoch
 ;; Copyright (C) 2002 Curl Corporation.
 
 ;; Author: Jonathan Kamens <jik@kamens.brookline.ma.us>
@@ -381,7 +381,7 @@ comment COMMENT."
   (let ((default-directory (file-name-directory file)))
     (p4-lowlevel-reopen file)))
 
-(defun vc-p4-print-log (files &optional buffer shortlog limit)
+(defun vc-p4-print-log (files &optional buffer shortlog revision limit)
   "Print Perforce log for FILE into *vc* buffer."
   ;; `log-view-mode' needs to have the file name in order to function
   ;; correctly. "p4 logview" does not print it, so we insert it here by
