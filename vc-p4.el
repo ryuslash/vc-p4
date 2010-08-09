@@ -210,6 +210,7 @@ revision."
   "Returns non-nil if FILE is unchanged from the version in Perforce."
   (let ((state (vc-p4-state file)))
     (and (not (equal (vc-file-getprop file 'vc-p4-action) "add"))
+         (not (equal (vc-file-getprop file 'vc-p4-action) "delete"))
 	 (or (equal state 'up-to-date)
 	     (equal state 'needs-patch)
 	     (p4-lowlevel-diff-s file "r")))))
