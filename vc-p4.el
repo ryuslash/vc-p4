@@ -512,17 +512,21 @@ files under the default directory otherwise."
          (inhibit-read-only t))
     (cond
      ((and (null rev1) (null rev2))
-      (let (added modified)
+      (let (added modified deleted)
         (dolist (file files)
-          (if (string= (vc-file-getprop file 'vc-p4-action) "add")
-              (push file added)
-            (push file modified)))
+          (cond
+           ((string= (vc-file-getprop file 'vc-p4-action) "add")
+            (push file added))
+           ((string= (vc-file-getprop file 'vc-p4-action) "delete")
+            (push file deleted))
+           (t
+            (push file modified))))
         (setq added (nreverse added)
-              modified (nreverse modified))
+              modified (nreverse modified)
+              deleted (nreverse deleted))
 
-        ;; For added files, Perforce can't give us what we want
-        ;; (diff the new file against /dev/null), so we do it
-        ;; ourselves.
+        ;; For added and deleted files, Perforce can't give us what we
+        ;; want (diff against /dev/null), so we do it ourselves.
         (with-current-buffer buffer
           (erase-buffer)
           (dolist (file added)
@@ -537,6 +541,28 @@ files under the default directory otherwise."
                       (list diff-switches))
                     (list "/dev/null"
                           file))))
+          (dolist (file deleted)
+            (with-temp-buffer
+              (p4-lowlevel-print file nil (current-buffer) :quiet)
+              (goto-char (point-min))
+              (while (search-forward-regexp "^text: " nil t)
+                (replace-match "" nil nil))
+              (apply 'call-process-region
+                     (point-min) (point-max)
+                     diff-command
+                     :delete
+                     buffer
+                     nil
+                     (append
+                      (list "-N"
+                            ;; Not sure this is the most useful labeling...
+                            (concat "--label=" (vc-file-getprop file 'vc-p4-depot-file))
+                            (concat "--label=" file))
+                      (if (listp diff-switches)
+                          diff-switches
+                        (list diff-switches))
+                      (list "-"
+                            "/dev/null")))))
 
           ;; Now diff all the modified files in a single call to the server.
           (when modified
