@@ -146,7 +146,8 @@ compare non-open files to the depot version."
                       (if (equal headRev haveRev)
                           'edited
                         'needs-merge))))
-                 ((and (not dont-compare-nonopened)
+                 ((and (file-exists-p file)
+		       (not dont-compare-nonopened)
                        (p4-lowlevel-diff-s file "e"))
                   'unlocked-changes)
                  ((or
