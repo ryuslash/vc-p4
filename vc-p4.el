@@ -144,7 +144,7 @@ compare non-open files to the depot version."
                     (if (string-match " by \\([^@]+\\)@" opened)
                         (match-string 1 opened)
                       (if (equal headRev haveRev)
-                          'edited
+                          (if (string= action "add") 'added 'edited)
                         'needs-merge))))
                  ((and (file-exists-p file)
 		       (not dont-compare-nonopened)
