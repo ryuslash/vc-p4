@@ -137,6 +137,8 @@ compare non-open files to the depot version."
                (headAction (cdr (assoc "headAction" alist)))
                (state 
                 (cond
+                 ((string= action "delete")
+                  'removed)
                  (action
                   (let ((opened (p4-lowlevel-opened file)))
                     (if (string-match " by \\([^@]+\\)@" opened)
