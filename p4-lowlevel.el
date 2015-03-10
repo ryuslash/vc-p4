@@ -58,6 +58,21 @@ If vc-command-messages is bound and non-nil, it does the same thing."
   :type 'boolean
   :group 'p4-lowlevel)
 
+(defcustom p4-lowlevel-ignore-error-list '("file(s) up-to-date")
+  "*A list of Perforce errors to ignore.  Note that each item in the list can be
+a portion of the error string you wish to ignore."
+  :type '(repeat (string :tag "Error to Ignore"))
+  :group 'p4-lowlevel)
+
+(defun p4-lowlevel-locate-p4 ()
+  "Attempts to locate the p4 command.  Used by `vc-p4-registered' to
+avoid an error on systems on which the Perforce client is not installed."
+  (if (and (boundp 'exec-suffixes) (fboundp 'file-executable-p))
+	  (locate-file p4-lowlevel-p4-program exec-path exec-suffixes 'file-executable-p) ; GNU Emacs
+	(locate-file p4-lowlevel-p4-program exec-path '("" ".btm" ".bat" ".cmd" ".exe" ".com") 'executable) ; XEmacs
+	)
+  )
+
 (defun p4-lowlevel-command-to-buffer (args &optional input output)
   "Call `p4-lowlevel-p4-command' with specified list of ARGS.
 ARGS can be a list or a single string argument.  Do not specify the
@@ -189,6 +204,25 @@ the return value of `p4-lowlevel-command-to-buffer' on failure."
           (setq matching-alist (cons element matching-alist))))
     (nreverse matching-alist)))
 
+(defun p4-lowlevel-should-ignore-error (error-string)
+  "Determines whether the error specified by ERROR-STRING should be ignored."
+  (if (stringp error-string)
+	  (let (should-ignore)
+		(dolist (item p4-lowlevel-ignore-error-list should-ignore)
+		  (if (string-match item error-string)
+			  (progn
+				(setq should-ignore t)
+				(if p4-lowlevel-command-messages
+					(message "Ignoring error: %s" error-string)
+				  )
+				)
+			)
+		  )
+		)
+	nil
+	)
+  )
+
 (defun p4-lowlevel-successful-alist-p (output)
   "Determines if OUTPUT, a buffer or alist, is from a successful p4 command.
 Does this by confirming that OUTPUT is a buffer or alist, that there
@@ -202,8 +236,11 @@ value of 0."
       (if (not (or (not element) (equal (cdr element) "0")))
           nil
         (if (p4-lowlevel-re-assoc "^error" output)
-            nil
-          t)))))
+			(let ((err (assoc "error" output)))
+			  (if (and (not (null err)) (p4-lowlevel-should-ignore-error (cdr err)))
+				  t
+				nil))
+		  t)))))
 
 (defun p4-lowlevel-items-matching-tag (tag output)
   "Returns a list of the items maching TAG in p4 OUTPUT, or nil if none.
@@ -320,13 +357,15 @@ commands."
   ; revision number (#rev) or a change number (@change).  We assume
   ; that a bare number is a revision number.
   (if rev
-      (if (string= rev "")
-          nil
-        (if (string-match "\\`[0-9]+\\'" rev)
-            (concat "#" rev)
-          (if (not (string-match "^[#@]" rev))
-              (concat "@" rev)
-            rev)))))
+	  (if (eq rev t)
+		  nil
+		(if (string= rev "")
+			nil
+		  (if (string-match "\\`[0-9]+\\'" rev)
+			  (concat "#" rev)
+			(if (not (string-match "^[#@]" rev))
+				(concat "@" rev)
+			  rev))))))
 
 ; Here's what we need to support from the "p4 add" command, at least
 ; for the time being:

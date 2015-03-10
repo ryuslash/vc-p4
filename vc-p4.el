@@ -59,7 +59,9 @@
 
 ;;; Code:
 
-(eval-when-compile
+(eval-and-compile
+  (if (not (string-match "XEmacs" emacs-version))
+	  (require 'vc-annotate))
   (require 'vc-hooks)
   (require 'vc)
   (require 'ediff))
@@ -103,19 +105,20 @@ specify a starting date when you run C-u C-x v g."
 
 (defun vc-p4-registered (file)
   "Return non-nil is FILE is handled by Perforce."
-  (if (and vc-p4-require-p4config
-	   (getenv "P4CONFIG")
-	   (not (vc-p4-find-p4config (file-name-directory file))))
-      nil
-    (let* ((fstat (p4-lowlevel-fstat file nil t))
-	   (action (cdr (or (assoc "action" fstat)
-			    (assoc "headAction" fstat)))))
-      (if (or (not fstat)
-	      (string= action "delete"))
-	  nil
-	; This sets a bunch of VC properties
-	(vc-p4-state file fstat)
-	t))))
+  (if (p4-lowlevel-locate-p4)
+	  (if (and vc-p4-require-p4config
+			   (getenv "P4CONFIG")
+			   (not (vc-p4-find-p4config (file-name-directory file))))
+		  nil
+		(let* ((fstat (p4-lowlevel-fstat file nil t))
+			   (action (cdr (or (assoc "action" fstat)
+								(assoc "headAction" fstat)))))
+		  (if (or (not fstat)
+				  (string= action "delete"))
+			  nil
+										; This sets a bunch of VC properties
+			(vc-p4-state file fstat)
+			t)))))
 
 (defun vc-p4-state (file &optional fstat-list force dont-compare-nonopened)
   "Returns the current version control state of FILE in Perforce.
@@ -344,7 +347,7 @@ comment COMMENT."
      ((null action)
       ;; If Perforce doesn't believe that we edited the file, we have
       ;; to use sync instead of revert.
-      (p4-lowlevel-sync file (vc-working-revision file) t))
+      (p4-lowlevel-sync file (vc-workfile-version file) t))
      (t
       (p4-lowlevel-revert file)))
     (if (string= action "add")
@@ -854,7 +857,7 @@ Optional arg VERSION is a version to annotate from."
   "Returns the time of the next Perforce annotation at or after point,
 as a floating point fractional number of days.
 Moves the point to the end of the annotation."
-  (when (looking-at vc-p4-annotate-re)
+  (when (and (looking-at vc-p4-annotate-re) (fboundp 'vc-annotate-convert-time))
     (goto-char (match-end 0))
     (let ((timestr (match-string-no-properties 1)))
       (string-match "\\([0-9]+\\)/\\([0-9]+\\)/\\([0-9]+\\)" timestr)
