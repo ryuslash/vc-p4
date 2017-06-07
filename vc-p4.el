@@ -61,7 +61,7 @@
 
 (eval-and-compile
   (if (not (string-match "XEmacs" emacs-version))
-	  (require 'vc-annotate))
+          (require 'vc-annotate))
   (require 'vc-hooks)
   (require 'vc)
   (require 'ediff))
@@ -110,19 +110,19 @@ Perforce has per-file revisions."
 (defun vc-p4-registered (file)
   "Return non-nil is FILE is handled by Perforce."
   (if (p4-lowlevel-locate-p4)
-	  (if (and vc-p4-require-p4config
-			   (getenv "P4CONFIG")
-			   (not (vc-p4-find-p4config (file-name-directory file))))
-		  nil
-		(let* ((fstat (p4-lowlevel-fstat file nil t))
-			   (action (cdr (or (assoc "action" fstat)
-								(assoc "headAction" fstat)))))
-		  (if (or (not fstat)
-				  (string= action "delete"))
-			  nil
-										; This sets a bunch of VC properties
-			(vc-p4-state file fstat)
-			t)))))
+          (if (and vc-p4-require-p4config
+                           (getenv "P4CONFIG")
+                           (not (vc-p4-find-p4config (file-name-directory file))))
+                  nil
+                (let* ((fstat (p4-lowlevel-fstat file nil t))
+                           (action (cdr (or (assoc "action" fstat)
+                                                                (assoc "headAction" fstat)))))
+                  (if (or (not fstat)
+                                  (string= action "delete"))
+                          nil
+                                                                                ; This sets a bunch of VC properties
+                        (vc-p4-state file fstat)
+                        t)))))
 
 (defun vc-p4-state (file &optional fstat-list force dont-compare-nonopened)
   "Returns the current version control state of FILE in Perforce.
@@ -505,7 +505,7 @@ files under the default directory otherwise."
                  ("^date: \\(.+\\)" (1 'change-log-date))
                  ("^summary:[ \t]+\\(.+\\)" (1 'log-view-message))))))
 
-(defun vc-p4-diff (file-or-files &optional rev1 rev2 buff)
+(defun vc-p4-diff (file-or-files &optional rev1 rev2 buff _async)
   "Do a Perforce diff."
   (let* ((buffer (cond
                   ((bufferp buff) buff)
@@ -764,8 +764,8 @@ Optional arg VERSION is a version to annotate from."
               ins-string)
           (setq ins-string (format "%d\n" ch-2))
           ;; (p4-exec-p4 buffer (list "diff2"
-          ;; 			   (format "%s@%d" file1 ch-1)
-          ;; 			   (format "%s@%d" file2 ch-2)) t)
+          ;;                       (format "%s@%d" file1 ch-1)
+          ;;                       (format "%s@%d" file2 ch-2)) t)
           (with-temp-buffer
             (vc-p4-command (current-buffer) nil nil
                       "diff2" (format "%s@%d" file1 ch-1)
@@ -798,8 +798,8 @@ Optional arg VERSION is a version to annotate from."
                       (setq ra (1+ ra))))))))
           (setq tmp-alst (cdr tmp-alst))))
       ;; (p4-noinput-buffer-action "print" nil t
-      ;; 			(list (format "%s#%d" fullname head-rev))
-      ;; 			t)
+      ;;                        (list (format "%s#%d" fullname head-rev))
+      ;;                        t)
       (vc-p4-command buffer nil nil
                 "print" (format "%s#%d" fullname head-rev))
       (let (line cnum (old-cnum 0) change-data
