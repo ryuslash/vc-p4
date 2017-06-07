@@ -69,9 +69,7 @@ a portion of the error string you wish to ignore."
 avoid an error on systems on which the Perforce client is not installed."
   (if (and (boundp 'exec-suffixes) (fboundp 'file-executable-p))
 	  (locate-file p4-lowlevel-p4-program exec-path exec-suffixes 'file-executable-p) ; GNU Emacs
-	(locate-file p4-lowlevel-p4-program exec-path '("" ".btm" ".bat" ".cmd" ".exe" ".com") 'executable) ; XEmacs
-	)
-  )
+	(locate-file p4-lowlevel-p4-program exec-path '("" ".btm" ".bat" ".cmd" ".exe" ".com") 'executable))) ; XEmacs
 
 (defun p4-lowlevel-command-to-buffer (args &optional input output)
   "Call `p4-lowlevel-p4-command' with specified list of ARGS.
@@ -93,17 +91,17 @@ Returns the buffer containing the program output."
   (if (stringp args)
       (setq args (list args)))
   (let* (apply-args p4-args call-func string-command exit-status
-         (temp-name " *p4-lowlevel-output*")
-         (output-buffer (or output (p4-lowlevel-get-buffer-create temp-name)))
-         (my-default-directory default-directory))
+                    (temp-name " *p4-lowlevel-output*")
+                    (output-buffer (or output (p4-lowlevel-get-buffer-create temp-name)))
+                    (my-default-directory default-directory))
     (save-excursion
       (set-buffer output-buffer)
-      (while (and my-default-directory 
+      (while (and my-default-directory
                   (not (file-exists-p my-default-directory))
                   (not (string= "" my-default-directory)))
-        (setq my-default-directory 
-              (file-name-as-directory 
-               (file-name-directory (directory-file-name 
+        (setq my-default-directory
+              (file-name-as-directory
+               (file-name-directory (directory-file-name
                                      my-default-directory)))))
       (if (not (file-exists-p my-default-directory))
           (setq my-default-directory "/"))
@@ -112,7 +110,7 @@ Returns the buffer containing the program output."
           (progn (set-buffer input)
                  (setq call-func 'call-process-region)
                  (setq apply-args (list (point-min) (point-max)
-					p4-lowlevel-p4-program nil)))
+                                        p4-lowlevel-p4-program nil)))
         (setq call-func 'call-process)
         (setq apply-args (list p4-lowlevel-p4-program input)))
       (setq p4-args (append (list "-s") args))
@@ -120,10 +118,10 @@ Returns the buffer containing the program output."
           (progn (setq string-command
                        (mapconcat (lambda (s) s)
                                   (append (list p4-lowlevel-p4-program)
-					  p4-args) " "))
+                                          p4-args) " "))
                  (message "Running %s..." string-command)))
       (let ((default-directory my-default-directory))
-        (setq exit-status (apply call-func 
+        (setq exit-status (apply call-func
                                  (append apply-args (list output-buffer nil)
                                          p4-args))))
       (if (p4-lowlevel-command-messages)
@@ -167,7 +165,7 @@ The alist is in the same order as the contents of the buffer."
       (while (re-search-forward "^\\([A-Za-z0-9]+\\): \\(.*\\)" nil t)
         (if (not (= (match-beginning 1) last-match-end))
             (progn (setq tag "text"
-                         value (buffer-substring last-match-end 
+                         value (buffer-substring last-match-end
                                                  (- (match-beginning 1) 1))
                          alist (cons (cons tag value) alist))))
         (setq tag (match-string 1)
@@ -177,7 +175,7 @@ The alist is in the same order as the contents of the buffer."
       (if (not (= last-match-end (point-max)))
           (progn (setq tag "text"
                        value (buffer-substring last-match-end
-					       (- (point-max) 1))
+                                               (- (point-max) 1))
                        alist (cons (cons tag value) alist))))
       (nreverse alist))))
 
@@ -189,7 +187,7 @@ The alist is in the same order as the contents of the buffer."
 when it has been parsed.  Returns the resulting alist on success, or
 the return value of `p4-lowlevel-command-to-buffer' on failure."
   (let ((output-buffer (p4-lowlevel-command-to-buffer args input))
-	return-value)
+        return-value)
     (setq return-value (p4-lowlevel-buffer-to-alist output-buffer))
     (kill-buffer output-buffer)
     return-value))
@@ -213,15 +211,8 @@ the return value of `p4-lowlevel-command-to-buffer' on failure."
 			  (progn
 				(setq should-ignore t)
 				(if p4-lowlevel-command-messages
-					(message "Ignoring error: %s" error-string)
-				  )
-				)
-			)
-		  )
-		)
-	nil
-	)
-  )
+					(message "Ignoring error: %s" error-string))))))
+	nil))
 
 (defun p4-lowlevel-successful-alist-p (output)
   "Determines if OUTPUT, a buffer or alist, is from a successful p4 command.
@@ -255,9 +246,9 @@ nil if none.  OUTPUT may be a buffer or alist.  The lines are
 terminated by newlines.  The tags are not included in the string."
   (if (bufferp output)
       (setq output (p4-lowlevel-buffer-to-alist output)))
-  (let* ((alist (p4-lowlevel-re-assoc tag output)) 
+  (let* ((alist (p4-lowlevel-re-assoc tag output))
          (lines (apply 'concat
-                       (apply 'append 
+                       (apply 'append
                               (mapcar (lambda (pair)
                                         (list (cdr pair) "\n")) alist)))))
     (if (equal lines "")
@@ -295,18 +286,18 @@ buffer and return it.  If it is anything else, return an alist of the
 output.  If optional fourth argument NOERROR is true, then returns nil
 rather than raising an error."
   (let* (errors error-buffer return-value
-         (output-buffer (p4-lowlevel-command-to-buffer args input 
-                                              (if (bufferp output-format)
-                                                  output-format)))
-         (output-alist (p4-lowlevel-buffer-to-alist output-buffer)))
+                (output-buffer (p4-lowlevel-command-to-buffer args input
+                                                              (if (bufferp output-format)
+                                                                  output-format)))
+                (output-alist (p4-lowlevel-buffer-to-alist output-buffer)))
     (if (p4-lowlevel-successful-alist-p output-alist) t
       (setq errors (or (p4-lowlevel-errors output-alist) "Unknown error"))
       (kill-buffer output-buffer)
       (or noerror
           (if (not (string-match "\n" errors))
               (error "P4 error: %s" errors)
-            (setq error-buffer (p4-lowlevel-get-buffer-create 
-				" *p4-lowlevel-error*"))
+            (setq error-buffer (p4-lowlevel-get-buffer-create
+                                " *p4-lowlevel-error*"))
             (set-buffer error-buffer)
             (erase-buffer)
             (insert errors)
@@ -334,8 +325,8 @@ by concatenating ` *p4-lowevel-', BUFFER-NAME, and `*' (e.g., if BUFFER is
 buffer, then puts output in that buffer.  Returns the buffer."
   (let* ((output-alist (p4-lowlevel-command-or-error args))
          (output-buffer (if (bufferp buffer) buffer
-                          (p4-lowlevel-get-buffer-create 
-			   (concat " *p4-lowlevel-" buffer "*"))))
+                          (p4-lowlevel-get-buffer-create
+                           (concat " *p4-lowlevel-" buffer "*"))))
          text)
     (save-excursion
       (set-buffer output-buffer)
@@ -353,9 +344,9 @@ bound and true."
 (defun p4-lowlevel-canonicalize-revision (rev)
   "Turn REV into a form which can be concatenated to file names in P4
 commands."
-  ; There is some ambiguity here, since a number can be either a
-  ; revision number (#rev) or a change number (@change).  We assume
-  ; that a bare number is a revision number.
+                                        ; There is some ambiguity here, since a number can be either a
+                                        ; revision number (#rev) or a change number (@change).  We assume
+                                        ; that a bare number is a revision number.
   (if rev
 	  (if (eq rev t)
 		  nil
@@ -367,29 +358,29 @@ commands."
 				(concat "@" rev)
 			  rev))))))
 
-; Here's what we need to support from the "p4 add" command, at least
-; for the time being:
-;
-; Do NOT need to support "-c".
-; Do NOT need to support "-t".
-; Do NOT need to support the specification of multiple files.
+                                        ; Here's what we need to support from the "p4 add" command, at least
+                                        ; for the time being:
+                                        ;
+                                        ; Do NOT need to support "-c".
+                                        ; Do NOT need to support "-t".
+                                        ; Do NOT need to support the specification of multiple files.
 
 (defun p4-lowlevel-add (file)
   "Tell Perforce to add FILE to the repository.
 Returns nil or raises an error on failure."
-  ; Note that because "p4 -s add" has bugs, at least as of p4 99.2,
-  ; this won't necessarily detect when the add fails, e.g., because of
-  ; an attempt to add a file which already exists in the repository.
+                                        ; Note that because "p4 -s add" has bugs, at least as of p4 99.2,
+                                        ; this won't necessarily detect when the add fails, e.g., because of
+                                        ; an attempt to add a file which already exists in the repository.
   (p4-lowlevel-command-or-error (list "add" file)))
 
-; Here's what we need to support from the "p4 change" command, at
-; least for the time being:
-; 
-; Do NOT need to support "-f".
-; Do NOT need to support "-d".
-; DO need to support "-o".
-; DO need to support "-i".
-; DO need to support specified changelist #'s.
+                                        ; Here's what we need to support from the "p4 change" command, at
+                                        ; least for the time being:
+                                        ;
+                                        ; Do NOT need to support "-f".
+                                        ; Do NOT need to support "-d".
+                                        ; DO need to support "-o".
+                                        ; DO need to support "-i".
+                                        ; DO need to support specified changelist #'s.
 
 (defun p4-lowlevel-change (&optional buffer op)
   "Creates or edits a P4 changelist from/to BUFFER.
@@ -412,8 +403,8 @@ buffer is returned."
             (string-to-number (match-string 1 info))
           (error "P4 error: could not parse info \"%s\"" info))
       (if (not buffer)
-          (setq buffer (p4-lowlevel-get-buffer-create 
-			" *p4-lowlevel-change*")))
+          (setq buffer (p4-lowlevel-get-buffer-create
+                        " *p4-lowlevel-change*")))
       (save-excursion
         (set-buffer buffer)
         (erase-buffer)
@@ -427,32 +418,32 @@ to the revisions between REV1 and REV2.  If I-FLAG is non-nil, pass
 `-i'; if L-FLAG is non-nil, pass `-l'; if M-VAL is non-nil, pass that
 value with `-m'; if S-VAL is non-nil, pass that value with `-s'."
   (setq rev1 (p4-lowlevel-canonicalize-revision rev1)
-	rev2 (p4-lowlevel-canonicalize-revision rev2))
+        rev2 (p4-lowlevel-canonicalize-revision rev2))
   (let ((full-file
-	 (if (or rev1 rev2)
-	     (format "%s%s,%s" file-pattern (or rev1 "") (or rev2 ""))
-	   file-pattern))
-	(i-list (if i-flag (list "-i")))
-	(l-list (if l-flag (list "-l")))
-	(m-list (if m-val (list "-m" (if (numberp m-val)
-					 (number-to-string m-val)
-				       m-val))))
-	(s-list (if s-val (list "-s" s-val))))
+         (if (or rev1 rev2)
+             (format "%s%s,%s" file-pattern (or rev1 "") (or rev2 ""))
+           file-pattern))
+        (i-list (if i-flag (list "-i")))
+        (l-list (if l-flag (list "-l")))
+        (m-list (if m-val (list "-m" (if (numberp m-val)
+                                         (number-to-string m-val)
+                                       m-val))))
+        (s-list (if s-val (list "-s" s-val))))
     (p4-lowlevel-command-or-error (append
-				   (list "changes")
-				   i-list l-list m-list s-list
-				   (list full-file))
-				  nil output-format)))
+                                   (list "changes")
+                                   i-list l-list m-list s-list
+                                   (list full-file))
+                                  nil output-format)))
 
-; Here's what we need to support from the "p4 diff" command, at
-; least for the time being:
-; 
-; DO need to support "-d<flag>".
-; DO need to support "-f" (in fact, need to specify it all the time).
-; Do NOT need to support "-s<flag>".
-; DO need to support "-t" (in fact, need to specify it all the time).
-; DO need to support diffing a single file.
-; Do NOT need to support diffing multiple files.
+                                        ; Here's what we need to support from the "p4 diff" command, at
+                                        ; least for the time being:
+                                        ;
+                                        ; DO need to support "-d<flag>".
+                                        ; DO need to support "-f" (in fact, need to specify it all the time).
+                                        ; Do NOT need to support "-s<flag>".
+                                        ; DO need to support "-t" (in fact, need to specify it all the time).
+                                        ; DO need to support diffing a single file.
+                                        ; Do NOT need to support diffing multiple files.
 
 (defun p4-lowlevel-diff (files &optional rev buffer)
   "Run `p4 diff' on FILE at revision REV and return a buffer
@@ -475,28 +466,28 @@ that buffer."
                        files))
          (diff-args (append (list "diff") p4-lowlevel-diff-switches
                             (list "-f" "-t") file-specs))
-         (buffer (p4-lowlevel-command-into-buffer diff-args 
-						  (or buffer "diff"))))
+         (buffer (p4-lowlevel-command-into-buffer diff-args
+                                                  (or buffer "diff"))))
     buffer))
 
 (defun p4-lowlevel-diff-s (file flag)
   "Run `p4 diff -s' on FILE, using FLAG as the argument to `-s', and
 return a list of the matching files."
-  (p4-lowlevel-items-matching-tag 
+  (p4-lowlevel-items-matching-tag
    "^info"
-   (p4-lowlevel-command-or-error 
+   (p4-lowlevel-command-or-error
     (list
      "diff"
      (format "-s%s" flag)
      file))))
 
-; Here's what we need to support from the "p4 diff2" command, at least
-; for the time being:
-;
-; DO need to support "-d<flag>".
-; Do NOT need to support "-q".
-; DO need to support "-t" (in fact, need to specify it all the time).
-; Do NOT need to support "-b".
+                                        ; Here's what we need to support from the "p4 diff2" command, at least
+                                        ; for the time being:
+                                        ;
+                                        ; DO need to support "-d<flag>".
+                                        ; Do NOT need to support "-q".
+                                        ; DO need to support "-t" (in fact, need to specify it all the time).
+                                        ; Do NOT need to support "-b".
 
 (defun p4-lowlevel-diff2 (file1 file2 &optional rev1 rev2 buffer)
   "Run `p4 diff2' on FILE and FILE2 and return a buffer containing the
@@ -510,29 +501,29 @@ optional BUFFER is non-nil, output goes in that buffer.  Uses
          (file2-spec (if rev2 (concat file2 rev2) file2))
          (diff-args (append (list "diff2") p4-lowlevel-diff-switches
                             (list "-t" file1-spec file2-spec)))
-         (buffer (p4-lowlevel-command-into-buffer diff-args 
-						  (or buffer "diff"))))
+         (buffer (p4-lowlevel-command-into-buffer diff-args
+                                                  (or buffer "diff"))))
     buffer))
 
-; Here's what we need to support from the "p4 edit" command, at least
-; for the time being:
-; 
-; Do NOT need to support "-c".
-; Do NOT need to support "-t".
-; Do NOT need to support the specification of multiple files.
+                                        ; Here's what we need to support from the "p4 edit" command, at least
+                                        ; for the time being:
+                                        ;
+                                        ; Do NOT need to support "-c".
+                                        ; Do NOT need to support "-t".
+                                        ; Do NOT need to support the specification of multiple files.
 
 (defun p4-lowlevel-edit (file)
   "Tell Perforce we want to edit FILE.
 Returns non-nil on success or nil on failure (or raises an error)."
   (p4-lowlevel-command-or-error (list "edit" file)))
 
-; Here's what we need to support from the "p4 filelog" command, at
-; least for the time being:
-;
-; DO need to support "-i".
-; DO need to support "-l".
-; Do NOT need to support "-m".
-; Do NOT need to support the specification of multiple files.
+                                        ; Here's what we need to support from the "p4 filelog" command, at
+                                        ; least for the time being:
+                                        ;
+                                        ; DO need to support "-i".
+                                        ; DO need to support "-l".
+                                        ; Do NOT need to support "-m".
+                                        ; Do NOT need to support the specification of multiple files.
 
 (defun p4-lowlevel-filelog (file &optional buffer long follow-branches limit)
   "Fetch the p4 log of FILE and return a buffer containing it.
@@ -551,11 +542,11 @@ last LIMIT log entries."
   "Fetch the string returned by running `p4 opened' on FILE."
   (p4-lowlevel-command-or-error (list "opened" file) nil 'string))
 
-; Here's what we need to support from the "p4 fstat" command, at least
-; for the time being:
-; 
-; Do NOT need to support any command-line switches.
-; Do NOT need to support the specification of multiple files.
+                                        ; Here's what we need to support from the "p4 fstat" command, at least
+                                        ; for the time being:
+                                        ;
+                                        ; Do NOT need to support any command-line switches.
+                                        ; Do NOT need to support the specification of multiple files.
 
 (defun p4-lowlevel-fstat (file &optional rev noerror)
   "Fetch p4 information about FILE (optionally, at REV).
@@ -567,28 +558,28 @@ files, then returns a list of lists of field-name/value elements."
   (setq rev (p4-lowlevel-canonicalize-revision rev))
   (let* ((file-spec (if rev (concat file rev) file))
          (args (list "fstat" file-spec))
-         (alist (p4-lowlevel-re-assoc 
-		 "^info" (p4-lowlevel-command-or-error args nil nil noerror)))
+         (alist (p4-lowlevel-re-assoc
+                 "^info" (p4-lowlevel-command-or-error args nil nil noerror)))
          element line field value values lists)
     (while alist
       (setq element (car alist)
             alist (cdr alist)
             line (cdr element))
       (if (not (string-match " " line))
-	  t
-	(setq field (substring line 0 (match-beginning 0))
-	      value (substring line (match-end 0)))
-	(if (string= field "depotFile") ; we assume depotFile is
-					; always first
-	    (if (not values)
-		t
-	      (setq lists (cons (nreverse values) lists))
-	      (setq values nil)))
-	(setq values (cons (cons field value) values))))
+          t
+        (setq field (substring line 0 (match-beginning 0))
+              value (substring line (match-end 0)))
+        (if (string= field "depotFile") ; we assume depotFile is
+                                        ; always first
+            (if (not values)
+                t
+              (setq lists (cons (nreverse values) lists))
+              (setq values nil)))
+        (setq values (cons (cons field value) values))))
     (when values
       (setq lists (cons (nreverse values) lists)))
     (if (= (length lists) 1)
-	(car lists)
+        (car lists)
       lists)))
 
 (defun p4-lowlevel-info ()
@@ -617,32 +608,32 @@ QUIET is non-nil, then the `-q' flag is passed to `p4 print'."
          (quiet-args (if quiet (list "-q")))
          (args (append (list "print") quiet-args (list fullfile))))
     (p4-lowlevel-command-or-error args nil output-format)))
-  
-; Here's what we need to support from the "p4 reopen" command, at
-; least for the time being:
-; 
-; DO need to support "-c changelist#", so that we can reopen a file in
-;   the default changelist before submitting it.
-; Do NOT need to support "-t".
-; Do NOT need to support the specification of multiple files.
+
+                                        ; Here's what we need to support from the "p4 reopen" command, at
+                                        ; least for the time being:
+                                        ;
+                                        ; DO need to support "-c changelist#", so that we can reopen a file in
+                                        ;   the default changelist before submitting it.
+                                        ; Do NOT need to support "-t".
+                                        ; Do NOT need to support the specification of multiple files.
 
 (defun p4-lowlevel-reopen (file &optional changelist)
   "Call `p4 reopen' on FILE.
 Optional CHANGELIST specifies the changelist to which to move it."
   (p4-lowlevel-command-or-error (append (list "reopen")
-                               (if changelist (list "-c" changelist) nil)
-                               (list file))))
+                                        (if changelist (list "-c" changelist) nil)
+                                        (list file))))
 
-; Here's what we need to support from the "p4 resolve" command, at
-; least for the time being:
-; 
-; DO need to support "-af" (in fact, need to specify it all the time).
-; Do NOT need to support "-am", "-as", "-at", "-ay".
-; Do NOT need to support "-f".
-; Do NOT need to support "-n".
-; DO need to support "-t" (in fact, need to specify it all the time).
-; Do NOT need to support "-v".
-; Do NOT need to support the specification of multiple files.
+                                        ; Here's what we need to support from the "p4 resolve" command, at
+                                        ; least for the time being:
+                                        ;
+                                        ; DO need to support "-af" (in fact, need to specify it all the time).
+                                        ; Do NOT need to support "-am", "-as", "-at", "-ay".
+                                        ; Do NOT need to support "-f".
+                                        ; Do NOT need to support "-n".
+                                        ; DO need to support "-t" (in fact, need to specify it all the time).
+                                        ; Do NOT need to support "-v".
+                                        ; Do NOT need to support the specification of multiple files.
 
 (defun p4-lowlevel-resolve (file)
   "Call `p4 resolve' on FILE.
@@ -650,43 +641,43 @@ Specifies the `-af' and `-t' options to ensure a non-interactive
 resolve.  Raises an error if the command fails."
   (p4-lowlevel-command-or-error (list "resolve" "-af" "-t" file)))
 
-; Here's what we need to support from the "p4 revert" command, at
-; least for the time being:
-; 
-; Do NOT need to support "-a".
-; Do NOT need to support "-c".
-; Do NOT need to support the specification of multiple files.
+                                        ; Here's what we need to support from the "p4 revert" command, at
+                                        ; least for the time being:
+                                        ;
+                                        ; Do NOT need to support "-a".
+                                        ; Do NOT need to support "-c".
+                                        ; Do NOT need to support the specification of multiple files.
 
 (defun p4-lowlevel-revert (file)
   "Tell Perforce to unedit FILE."
   (p4-lowlevel-command-or-error (list "revert" file)))
 
-; Here's what we need to support from the "p4 submit" command, at
-; least for the time being:
-; 
-; Only need to support non-interactive use; therefore, only need to
-; support "p4 submit -i".
+                                        ; Here's what we need to support from the "p4 submit" command, at
+                                        ; least for the time being:
+                                        ;
+                                        ; Only need to support non-interactive use; therefore, only need to
+                                        ; support "p4 submit -i".
 
 (defun p4-lowlevel-submit (change-spec)
   "Calls `p4 submit' on CHANGE-SPEC, which should be a string or buffer."
   (let (buffer)
     (if (bufferp change-spec)
         (setq buffer change-spec)
-      (setq buffer (p4-lowlevel-get-buffer-create 
-		    " *p4-lowlevel-submit-input*"))
+      (setq buffer (p4-lowlevel-get-buffer-create
+                    " *p4-lowlevel-submit-input*"))
       (save-excursion
         (set-buffer buffer)
         (erase-buffer)
         (insert change-spec)))
     (p4-lowlevel-command-or-error (list "submit" "-i") buffer)))
 
-; Here's what we need to support from the "p4 sync" command, at least
-; for the time being:
-; 
-; DO need to support "-f".
-; Do NOT need to support "-n".
-; DO need to support the specification of a file revision.
-; Do NOT need to support the specification of multiple files.
+                                        ; Here's what we need to support from the "p4 sync" command, at least
+                                        ; for the time being:
+                                        ;
+                                        ; DO need to support "-f".
+                                        ; Do NOT need to support "-n".
+                                        ; DO need to support the specification of a file revision.
+                                        ; Do NOT need to support the specification of multiple files.
 
 (defun p4-lowlevel-sync (file &optional rev force)
   "Call `p4 sync' for FILE.
@@ -703,14 +694,14 @@ optional FORCE is non-nil, pass the `-f' flag."
 range specified by REV1 and REV2, forcing the integration (i.e.,
 specifying `-f' to `p4 integrate' if FORCE is non-nil."
   (setq rev1 (p4-lowlevel-canonicalize-revision rev1)
-	rev2 (p4-lowlevel-canonicalize-revision rev2))
+        rev2 (p4-lowlevel-canonicalize-revision rev2))
   (let ((force-list (if force (list "-f")))
-	(from-full (if (or rev1 rev2)
-		       (format "%s%s,%s" from-file (or rev1 "") (or rev2 ""))
-		     from-file)))
+        (from-full (if (or rev1 rev2)
+                       (format "%s%s,%s" from-file (or rev1 "") (or rev2 ""))
+                     from-file)))
     (p4-lowlevel-command-or-error (append (list "integrate")
-					  (if force (list "-f"))
-					  (list from-full to-file)))))
+                                          (if force (list "-f"))
+                                          (list from-full to-file)))))
 
 (defun p4-lowlevel-client-version (&optional noerror)
   "Returns the Perforce client version string from `p4 -V'.
@@ -718,9 +709,9 @@ Returns the third field of the last line of output from `p4 -V', or
 signals an error if the invocation failed.  if optional NOERROR is
 non-nil, returns nil instead of signalling an error."
   (let ((version-string (p4-lowlevel-command-or-error "-V" nil 'string
-						      noerror)))
+                                                      noerror)))
     (if (string-match "\n[^/\n]+/[^/\n]+/\\([^\n/]+\\)/.*\n?\\'"
-		      version-string)
+                      version-string)
         (setq version-string (match-string 1 version-string)))
     version-string))
 
