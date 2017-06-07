@@ -77,7 +77,7 @@
 (put 'P4 'vc-functions nil)
 
 (defcustom vc-p4-require-p4config nil
-  "*If non-nil and the `P4CONFIG' environment variable is set, then
+  "If non-nil and the `P4CONFIG' environment variable is set, then
 only perform p4 operations on a file when a P4CONFIG file can be found
 in one of its parent directories.  This is useful if P4 operations are
 expensive to start, e.g., if you are connect to the network over a
@@ -110,19 +110,19 @@ Perforce has per-file revisions."
 (defun vc-p4-registered (file)
   "Return non-nil is FILE is handled by Perforce."
   (if (p4-lowlevel-locate-p4)
-          (if (and vc-p4-require-p4config
-                           (getenv "P4CONFIG")
-                           (not (vc-p4-find-p4config (file-name-directory file))))
-                  nil
-                (let* ((fstat (p4-lowlevel-fstat file nil t))
-                           (action (cdr (or (assoc "action" fstat)
-                                                                (assoc "headAction" fstat)))))
-                  (if (or (not fstat)
-                                  (string= action "delete"))
-                          nil
-                                                                                ; This sets a bunch of VC properties
-                        (vc-p4-state file fstat)
-                        t)))))
+      (if (and vc-p4-require-p4config
+               (getenv "P4CONFIG")
+               (not (vc-p4-find-p4config (file-name-directory file))))
+          nil
+        (let* ((fstat (p4-lowlevel-fstat file nil t))
+               (action (cdr (or (assoc "action" fstat)
+                                (assoc "headAction" fstat)))))
+          (if (or (not fstat)
+                  (string= action "delete"))
+              nil
+            ;; This sets a bunch of VC properties
+            (vc-p4-state file fstat)
+            t)))))
 
 (defun vc-p4-state (file &optional fstat-list force dont-compare-nonopened)
   "Returns the current version control state of FILE in Perforce.
