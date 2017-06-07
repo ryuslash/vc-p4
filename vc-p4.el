@@ -99,6 +99,11 @@ specify a starting date when you run C-u C-x v g."
   :type 'string
   :group 'vc)
 
+(defun vc-p4-revision-granularity ()
+  "Return file.
+Perforce has per-file revisions."
+  'file)
+
 (defun vc-p4-create-repo ()
   (error "create-repo not supported yet for P4"))
 
