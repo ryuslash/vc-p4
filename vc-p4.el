@@ -507,7 +507,10 @@ files under the default directory otherwise."
 
 (defun vc-p4-diff (file-or-files &optional rev1 rev2 buff)
   "Do a Perforce diff."
-  (let* ((buffer (or (bufferp buff) (get-buffer-create "*vc-diff*")))
+  (let* ((buffer (cond
+                  ((bufferp buff) buff)
+                  ((stringp buff) (get-buffer-create buff))
+                  (t (get-buffer-create "*vc-diff*"))))
          (files (if (atom file-or-files) (list file-or-files) file-or-files))
          (inhibit-read-only t))
     (cond
