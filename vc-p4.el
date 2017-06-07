@@ -319,28 +319,20 @@ comment COMMENT."
         (vc-p4-state file nil t)))))
 
 ;;; FIXME: this should not have a DESTFILE argument
-(defun vc-p4-checkout (file &optional editable rev destfile)
-  (if (and editable destfile (not (string= file destfile)))
-      (error "Can't lock a Perforce file in an alternate location."))
-  (if (string= file destfile)
-      (setq destfile nil))
+(defun vc-p4-checkout (file &optional rev)
   (let ((default-directory (file-name-directory file))
         buffer)
-                                        ; Make sure we've got all the current state of the file
+    ;; Make sure we've got all the current state of the file
     (vc-p4-state file)
     (cond
      ((not rev)
       (setq rev (vc-file-getprop file 'vc-workfile-version)))
-     ((string= rev "")
+     ((or (string= rev "")
+          (eq rev t))
       (setq rev (vc-file-getprop file 'vc-latest-version))))
-    (if destfile
-        (progn (setq buffer (p4-lowlevel-print file rev 'buffer t))
-               (set-buffer buffer)
-               (write-file destfile))
-      (if (not (string= rev (vc-file-getprop file 'vc-workfile-version)))
-          (p4-lowlevel-sync file rev))
-      (if editable
-          (p4-lowlevel-edit file))))
+    (if (not (string= rev (vc-file-getprop file 'vc-workfile-version)))
+        (p4-lowlevel-sync file rev))
+    (p4-lowlevel-edit file))
   (vc-p4-state file nil t))
 
 (defun vc-p4-revert (file contents-done)
