@@ -1,14 +1,23 @@
-NAME=vc-p4
-VERSION=0.1.0
-DESCRIPTION="Perforce integration for VC"
+NAME := vc-p4
+VERSION := 0.1.0
+DESCRIPTION := "Perforce integration for VC"
 
-.PHONY: vc-p4-pkg.el
+FULLNAME := "$(NAME)-$(VERSION)"
 
-$(NAME)-$(VERSION).tar: $(NAME)-pkg.el $(NAME).el p4-lowlevel.el
-	tar cf $@ --xform="s/^/$(NAME)-$(VERSION)\//" $^
+.PHONY: $(NAME)-pkg.el
+.SUFFIXES:
+
+$(FULLNAME).tar: $(FULLNAME)/
+	tar cf $@ $^
+
+$(FULLNAME)/: $(FULLNAME)/$(NAME)-pkg.el $(FULLNAME)/$(NAME).el $(FULLNAME)/p4-lowlevel.el
+
+$(FULLNAME)/%: ./%
+	test -d $$(dirname $@) || mkdir $$(dirname $@)
+	cp $^ $@
 
 $(NAME)-pkg.el:
 	echo "(define-package \"$(NAME)\" \"$(VERSION)\" \"$(DESCRIPTION)\")" > $@
 
 clean:
-	rm -f $(NAME)-pkg.el $(NAME)-$(VERSION).tar
+	rm -rf $(NAME)-pkg.el $(NAME)-$(VERSION).tar $(FULLNAME)/
