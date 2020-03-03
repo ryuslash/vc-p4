@@ -980,4 +980,9 @@ third subblock in each conflict block."
 The difference to vc-do-command is that this function always invokes `p4'."
   (apply 'vc-do-command buffer okstatus "p4" file flags))
 
+(defun vc-p4-switch-client (client)
+  (interactive
+   (list (completing-read "Client: " (p4-lowlevel-local-clients))))
+  (p4-lowlevel-command-or-error `("set" ,(format "P4CLIENT=%s" client))))
+
 (provide 'vc-p4)
