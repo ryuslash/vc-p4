@@ -1,5 +1,5 @@
 NAME := vc-p4
-VERSION := 0.1.0
+VERSION := 0.1.1
 DESCRIPTION := "Perforce integration for VC"
 
 FULLNAME := "$(NAME)-$(VERSION)"
