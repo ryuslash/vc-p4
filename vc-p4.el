@@ -980,6 +980,10 @@ third subblock in each conflict block."
 The difference to vc-do-command is that this function always invokes `p4'."
   (apply 'vc-do-command buffer okstatus "p4" file flags))
 
+(defun vc-p4-delete-file (file)
+  "Tell perforce to delete FILE from the repository."
+  (p4-lowlevel-delete file))
+
 (defun vc-p4-switch-client (client)
   (interactive
    (list (completing-read "Client: " (p4-lowlevel-local-clients))))

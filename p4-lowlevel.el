@@ -373,6 +373,11 @@ Returns nil or raises an error on failure."
                                         ; an attempt to add a file which already exists in the repository.
   (p4-lowlevel-command-or-error (list "add" file)))
 
+(defun p4-lowlevel-delete (file)
+  "Tell Perforce to delet FILE from the repository.
+Returns nil or raises an error on failure."
+  (p4-lowlevel-command-or-error (list "delete" file)))
+
                                         ; Here's what we need to support from the "p4 change" command, at
                                         ; least for the time being:
                                         ;
