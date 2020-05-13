@@ -72,8 +72,8 @@
 
 (if (not (memq 'P4 vc-handled-backends))
     (setq vc-handled-backends (cons 'P4 vc-handled-backends)))
-                                        ; This is useful during development to ensure that we can simply
-                                        ; reeval this buffer to get any new functions that have been added.
+;; This is useful during development to ensure that we can simply reeval this
+;; buffer to get any new functions that have been added.
 (put 'P4 'vc-functions nil)
 
 (defcustom vc-p4-require-p4config nil
@@ -382,9 +382,8 @@ comment COMMENT."
   "Steal Perforce lock on FILE."
   (if (and version (not (equal version (vc-workfile-version file))))
       (error "Can't specify version when stealing Perforce lock."))
-                                        ; Must set default-directory because this is called in a mail send
-                                        ; hook and thus not with the current buffer set to the file being
-                                        ; reopened.
+  ;; Must set default-directory because this is called in a mail send hook and
+  ;; thus not with the current buffer set to the file being reopened.
   (let ((default-directory (file-name-directory file)))
     (p4-lowlevel-reopen file)))
 
@@ -660,9 +659,9 @@ Optional arg VERSION is a version to annotate from."
                  "\\s-+on\\s-+"     "\\([^ \t]+\\)" ;; date
                  "\\s-+by\\s-+"     "\\([^ \t]+\\)" ;; author
                  "@"))
-        head-name ;; file spec of the head revision for this blame assignment
-        branch-p  ;; have we tracked into a branch?
-        cur-file ;; file name of the current branch during blame assignment
+        head-name     ; file spec of the head revision for this blame assignment
+        branch-p      ; have we tracked into a branch?
+        cur-file      ; file name of the current branch during blame assignment
         change ch-alist fullname head-rev headseen)
 
     ;; we asked for blame constrained by a change number
