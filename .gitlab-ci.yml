@@ -1,0 +1,42 @@
+image: silex/emacs:26.3-alpine-dev
+
+stage:
+  - pre-package
+  - package
+  - deploy
+
+pre-package:
+  stage: pre-package
+  before_script:
+    - make clean
+  script:
+    - make
+  artifacts:
+    paths:
+      - *.tar
+
+package:
+  stage: package
+  dependencies:
+    - pre-package
+  before_script:
+    - rm -rf bin/
+    - mkdir bin/
+  script: >
+    emacs --batch --load package --funcall package-initialize
+    --eval "(let ((package-archive-upload-base "public/"))
+              (package-upload-file (car (sort (file-expand-wildcards \"*.tar\") \#'string>))))"
+  artifacts:
+    paths:
+      - public/
+
+deploy:
+  stage: deploy
+  only:
+    - master
+  dependencies:
+    - package
+  script: echo "Done"
+  artifacts:
+    paths:
+      - public
