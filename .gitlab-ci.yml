@@ -28,7 +28,7 @@ package:
     - mkdir bin/
   script: >
     emacs --batch --load package --funcall package-initialize
-    --eval "(let ((package-archive-upload-base "public/"))
+    --eval "(let ((package-archive-upload-base \"public/\"))
               (package-upload-file (car (sort (file-expand-wildcards \"*.tar\") \#'string>))))"
   artifacts:
     paths:
