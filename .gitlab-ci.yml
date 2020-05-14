@@ -1,6 +1,6 @@
 image: silex/emacs:26.3-alpine-dev
 
-stage:
+stages:
   - pre-package
   - package
   - deploy
@@ -13,7 +13,7 @@ pre-package:
     - make
   artifacts:
     paths:
-      - *.tar
+      - /*.tar
 
 package:
   stage: package
