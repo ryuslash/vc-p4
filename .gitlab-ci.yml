@@ -24,8 +24,8 @@ package:
   dependencies:
     - pre-package
   before_script:
-    - rm -rf bin/
-    - mkdir bin/
+    - rm -rf bin/ public/
+    - mkdir bin/ public/
   script: >
     emacs --batch --load package --load package-x --funcall package-initialize
     --eval "(let ((package-archive-upload-base \"public/\"))
