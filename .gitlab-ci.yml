@@ -29,7 +29,7 @@ package:
   script: >
     emacs --batch --load package --load package-x --funcall package-initialize
     --eval "(let ((package-archive-upload-base \"public/\"))
-              (package-upload-file (car (sort (file-expand-wildcards \"*.tar\") #'string>))))"
+              (package-upload-file (car (sort (file-expand-wildcards \"dist/*.tar\") #'string>))))"
   artifacts:
     paths:
       - public/
