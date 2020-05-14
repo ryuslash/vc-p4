@@ -34,7 +34,7 @@ package:
     paths:
       - public/
 
-deploy:
+pages:
   stage: deploy
   only:
     - master
