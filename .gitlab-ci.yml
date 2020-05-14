@@ -8,12 +8,16 @@ stages:
 pre-package:
   stage: pre-package
   before_script:
+    - rm -rf dist
     - make clean
   script:
     - make
+  after_script:
+    - mkdir -p dist
+    - mv *.tar dist
   artifacts:
     paths:
-      - /*.tar
+      - dist/*.tar
 
 package:
   stage: package
