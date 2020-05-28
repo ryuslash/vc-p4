@@ -17,7 +17,7 @@ $(FULLNAME)/%: ./%
 	cp $^ $@
 
 $(NAME)-pkg.el:
-	echo "(define-package \"$(NAME)\" \"$(VERSION)\" \"$(DESCRIPTION)\")" > $@
+	echo "(define-package \"$(NAME)\" \"$(VERSION)\" \"$(DESCRIPTION)\" '((emacs \"25\")))" > $@
 
 clean:
 	rm -rf $(NAME)-pkg.el $(NAME)-$(VERSION).tar $(FULLNAME)/
