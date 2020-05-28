@@ -1,0 +1,20 @@
+#+TITLE: Change Log
+#+STARTUP: content
+#+OPTIONS: H:1 num:nil author:nil creator:nil timestamp:nil toc:nil
+#+TODO: ADDED CHANGED DEPRECATED REMOVED FIXED SECURITY
+
+All notable changes to this project will be documented in this file. This
+project adheres to [[https://semver.org/spec/v2.0.0.html][Semantic Versioning 2.0.0]].
+
+* 0.2.1 -- 2020-05-27
+** FIXED Recognition of sub-directories of Perforce repos
+
+   In other words, on Windows, vc-p4 now correctly recognizes sub-directories as
+   part of the repository.
+
+** CHANGED Minimum required Emacs version to 25
+
+** FIXED vc-dir for vc-p4
+
+   =vc-dir= has changed the function that it calls to =vc-BACKEND-dir-status-files=,
+   from =vc-BACKEND-dir-status=, so now calling =vc-dir= should work again.
