@@ -174,7 +174,7 @@ compare non-open files to the depot version."
           (vc-file-setprop file 'vc-workfile-version haveRev)
           state)))))
 
-(defun vc-p4-dir-status (dir update-function)
+(defun vc-p4-dir-status-files (dir files update-function)
   "Find information for `vc-dir'."
   ;; XXX: this should be asynchronous.
   (let ((lists (p4-lowlevel-fstat
