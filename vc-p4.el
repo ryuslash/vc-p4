@@ -892,17 +892,9 @@ If DIRNAME is not specified, uses `default-directory'."
   "Return true if FILE is inside the p4 client hierarchy."
   (let* ((default-directory (file-name-directory file))
          (info (p4-lowlevel-info))
-         (root-pair (assoc "Client root" info))
-         (root (and root-pair (cdr root-pair)))
-         (quoted-root (and root (concat "^" (regexp-quote root))))
-         (cwd-pair (assoc "Current directory" info))
-         (cwd (and cwd-pair (cdr cwd-pair))))
-    (if (or (not quoted-root) (not (string-match quoted-root cwd)))
-        nil
-      (setq cwd (replace-match "" nil nil cwd))
-      (if (or (string= cwd "") (string-match "^/" cwd))
-          t
-        nil))))
+         (root (alist-get "Client root" info))
+         (cwd (alist-get "Current directory" info)))
+    (string-prefix-p root cwd)))
 
 (defun vc-p4-has-unresolved-conflicts-p (file)
   "Search through FILE's buffer for unresolved P4 conflicts.
