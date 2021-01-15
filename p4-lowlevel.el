@@ -1,4 +1,4 @@
-;;; p4-lowlwevel.el --- low-level support for Perforce operations in Emacs
+;;; p4-lowlwevel.el --- low-level support for Perforce operations in Emacs  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2009 Magnus Henoch
 ;; Copyright (C) 2002 Curl Corporation.

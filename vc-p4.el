@@ -1,4 +1,4 @@
-;;; vc-p4.el --- Integrate Perforce support into VC mode in Emacs 21
+;;; vc-p4.el --- Integrate Perforce support into VC mode in Emacs 21  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2009, 2010 Magnus Henoch
 ;; Copyright (C) 2002 Curl Corporation.
