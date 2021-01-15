@@ -64,6 +64,13 @@ a portion of the error string you wish to ignore."
   :type '(repeat (string :tag "Error to Ignore"))
   :group 'p4-lowlevel)
 
+(define-error 'p4-error
+  "A Perforce error occurred")
+
+(define-error 'p4-not-logged-in-error
+  "You’re not logged in to Perforce"
+  'p4-error)
+
 (defun p4-lowlevel-locate-p4 ()
   "Attempts to locate the p4 command.  Used by `vc-p4-registered' to
 avoid an error on systems on which the Perforce client is not installed."
@@ -294,6 +301,8 @@ rather than raising an error."
       (setq errors (or (p4-lowlevel-errors output-alist) "Unknown error"))
       (kill-buffer output-buffer)
       (or noerror
+          (when (string-match (rx string-start "Perforce password (P4PASSWD) invalid or unset.") errors)
+            (signal 'p4-not-logged-in-error nil))
           (if (not (string-match "\n" errors))
               (error "P4 error: %s" errors)
             (setq error-buffer (p4-lowlevel-get-buffer-create
@@ -771,5 +780,19 @@ already exists."
      (if (not (= result 0))
          (error "Clients returned non-zero exit code.")))
     (_ acc)))
+
+(cl-defun p4-lowlevel-login (&key password status)
+  "Call ‘p4 login’ with arguments.
+PASSWORD should be a string representing the password to use to
+log in to Perforce. If STATUS is specified the status of the
+current ticket is displayed (if there is one) instead."
+  (let* ((status-args (and status '("-s")))
+         (args (append '("login") status-args)))
+    (condition-case err
+        (with-temp-buffer
+          (when password (insert password))
+          (p4-lowlevel-command-or-error args (current-buffer)))
+      (p4-not-logged-in-error
+       (unless status (signal (car err) (cdr err)))))))
 
 (provide 'p4-lowlevel)

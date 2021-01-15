@@ -980,4 +980,13 @@ The difference to vc-do-command is that this function always invokes `p4'."
    (list (completing-read "Client: " (p4-lowlevel-local-clients))))
   (p4-lowlevel-command-or-error `("set" ,(format "P4CLIENT=%s" client))))
 
+(defun vc-p4-login (password)
+  "Call the p4 login command user PASSWORD."
+  (interactive (list (read-passwd "P4 Password: ")))
+  (p4-lowlevel-login :password password))
+
+(defun vc-p4-logged-in-p ()
+  "Check if there is an active session for Perforce."
+  (p4-lowlevel-login :status t))
+
 (provide 'vc-p4)
