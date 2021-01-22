@@ -99,6 +99,11 @@ specify a starting date when you run C-u C-x v g."
   :type 'string
   :group 'vc)
 
+(defcustom vc-p4-client nil
+  "Specifies the client to use when connecting to Perforce."
+  :type 'string
+  :group 'vc)
+
 (defun vc-p4-revision-granularity ()
   "Return file.
 Perforce has per-file revisions."
@@ -114,7 +119,7 @@ Perforce has per-file revisions."
                (getenv "P4CONFIG")
                (not (vc-p4-find-p4config (file-name-directory file))))
           nil
-        (let* ((fstat (p4-lowlevel-fstat file nil t))
+        (let* ((fstat (p4-lowlevel-fstat file :noerror t :client vc-p4-client))
                (action (cdr (or (assoc "action" fstat)
                                 (assoc "headAction" fstat)))))
           (if (or (not fstat)
@@ -133,7 +138,7 @@ previously fetched.  If DONT-COMPARE-NONOPENED is non-nil, don't
 compare non-open files to the depot version."
   (if (and (not force) (vc-file-getprop file 'vc-p4-did-fstat))
       (vc-file-getprop file 'vc-state)
-    (let ((alist (or fstat-list (p4-lowlevel-fstat file nil t))))
+    (let ((alist (or fstat-list (p4-lowlevel-fstat file :noerror t :client vc-p4-client))))
       (if (null alist)
           'unregistered
         (let* (
@@ -147,7 +152,7 @@ compare non-open files to the depot version."
                  ((string= action "delete")
                   'removed)
                  (action
-                  (let ((opened (p4-lowlevel-opened file)))
+                  (let ((opened (p4-lowlevel-opened file :client vc-p4-client)))
                     (if (string-match " by \\([^@]+\\)@" opened)
                         (match-string 1 opened)
                       (if (equal headRev haveRev)
@@ -155,7 +160,7 @@ compare non-open files to the depot version."
                         'needs-merge))))
                  ((and (file-exists-p file)
                        (not dont-compare-nonopened)
-                       (p4-lowlevel-diff-s file "e"))
+                       (p4-lowlevel-diff-s file "e" :client vc-p4-client))
                   'unlocked-changes)
                  ((or
                    (equal headRev haveRev)
@@ -179,7 +184,8 @@ compare non-open files to the depot version."
   ;; XXX: this should be asynchronous.
   (let ((lists (p4-lowlevel-fstat
                 (format "%s/..." (directory-file-name (expand-file-name dir)))
-                nil t)))
+                :noerror t
+                :client vc-p4-client)))
     (when (stringp (caar lists))
       (setq lists (list lists)))
     (dolist (this-list lists)
@@ -220,7 +226,7 @@ revision."
          (not (equal (vc-file-getprop file 'vc-p4-action) "delete"))
          (or (equal state 'up-to-date)
              (equal state 'needs-patch)
-             (p4-lowlevel-diff-s file "r")))))
+             (p4-lowlevel-diff-s file "r" :client vc-p4-client)))))
 
 (defun vc-p4-mode-line-string (file)
   "Return string for placement into the modeline for FILE.
@@ -250,7 +256,7 @@ special case of a Perforce file that is added but not yet committed."
   ;; before it used to be just a single file. We don't support that
   ;; interface yet, so just use the first file in the list.
   (let* ((file (if (listp files) (car files) files))
-         (fstat (p4-lowlevel-fstat file nil t))
+         (fstat (p4-lowlevel-fstat file :noerror t :client vc-p4-client))
          (action (cdr (assoc "action" fstat))))
     (if (string= action "delete")
         (if (yes-or-no-p
@@ -278,7 +284,7 @@ administered by Perforce."
            (getenv "P4CONFIG")
            (not (vc-p4-find-p4config file)))
       nil
-    (or (p4-lowlevel-fstat file nil t)
+    (or (p4-lowlevel-fstat file :noerror t :client vc-p4-client)
         (vc-p4-is-in-client (if (file-directory-p file)
                            (file-name-as-directory file)
                          file)))))

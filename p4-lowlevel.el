@@ -484,16 +484,14 @@ that buffer."
                                                   (or buffer "diff"))))
     buffer))
 
-(defun p4-lowlevel-diff-s (file flag)
+(defun p4-lowlevel-diff-s (file flag &key client)
   "Run `p4 diff -s' on FILE, using FLAG as the argument to `-s', and
 return a list of the matching files."
   (p4-lowlevel-items-matching-tag
    "^info"
-   (p4-lowlevel-command-or-error
-    (list
-     "diff"
-     (format "-s%s" flag)
-     file))))
+   (let* ((client-args (if client (list "-c" client)))
+          (args (append client-args (list "diff" (format "-s%s" flag) file))))
+    (p4-lowlevel-command-or-error args))))
 
 ;; Here's what we need to support from the "p4 diff2" command, at least for the
 ;; time being:
@@ -552,9 +550,11 @@ last LIMIT log entries."
          (args (append (list "filelog") long-flag branch-flag limit-flag (list file))))
     (p4-lowlevel-command-into-buffer args (or buffer "log"))))
 
-(defun p4-lowlevel-opened (file)
+(cl-defun p4-lowlevel-opened (file &key client)
   "Fetch the string returned by running `p4 opened' on FILE."
-  (p4-lowlevel-command-or-error (list "opened" file) nil 'string))
+  (let* ((client-args (if client (list "-c" client)))
+         (args (append client-args (list "opened" file))))
+   (p4-lowlevel-command-or-error args nil 'string)))
 
 ;; Here's what we need to support from the "p4 fstat" command, at least for the
 ;; time being:
@@ -562,7 +562,7 @@ last LIMIT log entries."
 ;; Do NOT need to support any command-line switches.
 ;; Do NOT need to support the specification of multiple files.
 
-(defun p4-lowlevel-fstat (file &optional rev noerror)
+(cl-defun p4-lowlevel-fstat (file &key rev noerror client)
   "Fetch p4 information about FILE (optionally, at REV).
 REV should be in the syntax described by `p4 help revisions'.  Returns
 a list of field-name/value elements on success, or raises an error on
@@ -571,7 +571,8 @@ rather than raising an error on failure.  If FILE matches multiple
 files, then returns a list of lists of field-name/value elements."
   (setq rev (p4-lowlevel-canonicalize-revision rev))
   (let* ((file-spec (if rev (concat file rev) file))
-         (args (list "fstat" file-spec))
+         (client-args (when client (list "-c" client)))
+         (args (append client-args (list "fstat" file-spec)))
          (alist (p4-lowlevel-re-assoc
                  "^info" (p4-lowlevel-command-or-error args nil nil noerror)))
          element line field value values lists)
