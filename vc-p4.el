@@ -265,10 +265,10 @@ special case of a Perforce file that is added but not yet committed."
               (if (yes-or-no-p "Preserve current contents? ")
                   (let ((tempfile (format "%s.vc-register~" file)))
                     (rename-file file tempfile)
-                    (p4-lowlevel-revert file)
+                    (p4-lowlevel-revert file :client vc-p4-client)
                     (delete-file file)
                     (rename-file tempfile file))
-                (p4-lowlevel-revert file))
+                (p4-lowlevel-revert file :client vc-p4-client))
               (p4-lowlevel-edit file))
           (error "File %s already opened for delete." file))
       (p4-lowlevel-add file))))
@@ -350,7 +350,7 @@ comment COMMENT."
       ;; to use sync instead of revert.
       (p4-lowlevel-sync file (vc-workfile-version file) t))
      (t
-      (p4-lowlevel-revert file)))
+      (p4-lowlevel-revert file :client vc-p4-client)))
     (if (string= action "add")
         (vc-file-clearprops file)
       (vc-p4-state file nil t))))

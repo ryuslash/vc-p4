@@ -663,9 +663,11 @@ resolve.  Raises an error if the command fails."
 ;; Do NOT need to support "-c".
 ;; Do NOT need to support the specification of multiple files.
 
-(defun p4-lowlevel-revert (file)
+(cl-defun p4-lowlevel-revert (file &key client)
   "Tell Perforce to unedit FILE."
-  (p4-lowlevel-command-or-error (list "revert" file)))
+  (let* ((client-args (if client (list "-c" client)))
+         (args (append client-args (list "revert" file))))
+    (p4-lowlevel-command-or-error args)))
 
 ;; Here's what we need to support from the "p4 submit" command, at least for the
 ;; time being:
