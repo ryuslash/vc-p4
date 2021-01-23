@@ -524,10 +524,12 @@ optional BUFFER is non-nil, output goes in that buffer.  Uses
 ;; Do NOT need to support "-t".
 ;; Do NOT need to support the specification of multiple files.
 
-(defun p4-lowlevel-edit (file)
+(cl-defun p4-lowlevel-edit (file &key client)
   "Tell Perforce we want to edit FILE.
 Returns non-nil on success or nil on failure (or raises an error)."
-  (p4-lowlevel-command-or-error (list "edit" file)))
+  (let* ((client-args (if client (list "-c" client)))
+         (args (append client-args (list "edit" file))))
+    (p4-lowlevel-command-or-error args)))
 
 ;; Here's what we need to support from the "p4 filelog" command, at least for
 ;; the time being:
@@ -696,14 +698,15 @@ resolve.  Raises an error if the command fails."
 ;; DO need to support the specification of a file revision.
 ;; Do NOT need to support the specification of multiple files.
 
-(defun p4-lowlevel-sync (file &optional rev force)
+(cl-defun p4-lowlevel-sync (file &key rev force client)
   "Call `p4 sync' for FILE.
 If optional REV is specified, use that revision specifier.  If
 optional FORCE is non-nil, pass the `-f' flag."
   (setq rev (p4-lowlevel-canonicalize-revision rev))
   (let* ((fullfile (if rev (concat file rev) file))
          (force-args (if force (list "-f")))
-         (args (append (list "sync") force-args (list fullfile))))
+         (client-args (if client (list "-c" client)))
+         (args (append client-args (list "sync") force-args (list fullfile))))
     (p4-lowlevel-command-or-error args)))
 
 (defun p4-lowlevel-integrate (from-file to-file &optional rev1 rev2 force)

@@ -269,7 +269,7 @@ special case of a Perforce file that is added but not yet committed."
                     (delete-file file)
                     (rename-file tempfile file))
                 (p4-lowlevel-revert file :client vc-p4-client))
-              (p4-lowlevel-edit file))
+              (p4-lowlevel-edit file :client vc-p4-client))
           (error "File %s already opened for delete." file))
       (p4-lowlevel-add file))))
 
@@ -337,8 +337,8 @@ comment COMMENT."
           (eq rev t))
       (setq rev (vc-file-getprop file 'vc-latest-version))))
     (if (not (string= rev (vc-file-getprop file 'vc-workfile-version)))
-        (p4-lowlevel-sync file rev))
-    (p4-lowlevel-edit file))
+        (p4-lowlevel-sync file :rev rev :client vc-p4-client))
+    (p4-lowlevel-edit file :client vc-p4-client))
   (vc-p4-state file nil t))
 
 (defun vc-p4-revert (file contents-done)
@@ -348,7 +348,10 @@ comment COMMENT."
      ((null action)
       ;; If Perforce doesn't believe that we edited the file, we have
       ;; to use sync instead of revert.
-      (p4-lowlevel-sync file (vc-workfile-version file) t))
+      (p4-lowlevel-sync file
+                        :rev (vc-workfile-version file)
+                        :force t
+                        :client vc-p4-client))
      (t
       (p4-lowlevel-revert file :client vc-p4-client)))
     (if (string= action "add")
