@@ -496,8 +496,12 @@ files under the default directory otherwise."
         (setq files "..."))
     (message "Computing change log entries...")
     (insert (p4-lowlevel-info-lines
-             (p4-lowlevel-changes files nil start-rev end-rev
-                                  nil t nil "submitted")))
+             (p4-lowlevel-changes files
+                                  :rev1 start-rev
+                                  :rev2 end-rev
+                                  :l-flag t
+                                  :s-val "submitted"
+                                  :client vc-p4-client)))
     (if (= (point) (point-min)) t
       (if (not (= (point) (point-max)))
           (insert "\n"))

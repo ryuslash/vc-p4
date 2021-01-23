@@ -428,7 +428,8 @@ buffer is returned."
         (insert (p4-lowlevel-info-lines alist))
         buffer))))
 
-(defun p4-lowlevel-changes (file-pattern &optional output-format rev1 rev2 i-flag l-flag m-val s-val)
+(cl-defun p4-lowlevel-changes
+    (file-pattern &key output-format rev1 rev2 i-flag l-flag m-val s-val client)
   "Call `p4 changes' on FILE-PATTERN.  Optional OUTPUT-FORMAT is as
 described in `p4-lowlevel-command-or-error'.  Optionally, limit output
 to the revisions between REV1 and REV2.  If I-FLAG is non-nil, pass
@@ -445,8 +446,10 @@ value with `-m'; if S-VAL is non-nil, pass that value with `-s'."
         (m-list (if m-val (list "-m" (if (numberp m-val)
                                          (number-to-string m-val)
                                        m-val))))
-        (s-list (if s-val (list "-s" s-val))))
+        (s-list (if s-val (list "-s" s-val)))
+        (client-args (if client (list "-c" client))))
     (p4-lowlevel-command-or-error (append
+                                   client-args
                                    (list "changes")
                                    i-list l-list m-list s-list
                                    (list full-file))
