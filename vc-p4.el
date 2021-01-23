@@ -303,7 +303,7 @@ comment COMMENT."
       (error "Can't specify revision for Perforce checkin."))
   (let* (;; XXX: default-directory?  this should work for most (all?) cases
          (default-directory (file-name-directory (car files)))
-         (change-buffer (p4-lowlevel-change))
+         (change-buffer (p4-lowlevel-change :client vc-p4-client))
          (indent-tabs-mode 1)
          insertion-start change-number)
     (dolist (file files)
@@ -321,9 +321,15 @@ comment COMMENT."
       (delete-region (point) (point-max))
       (dolist (file files)
         (insert "\t" (vc-file-getprop file 'vc-p4-depot-file) "\n"))
-      (setq change-number (p4-lowlevel-change (current-buffer) t))
-      (p4-lowlevel-change (current-buffer) change-number)
-      (p4-lowlevel-submit (current-buffer))
+      (setq change-number (p4-lowlevel-change
+                           :buffer (current-buffer)
+                           :op t
+                           :client vc-p4-client))
+      (p4-lowlevel-change
+       :buffer (current-buffer)
+       :op change-number
+       :client vc-p4-client)
+      (p4-lowlevel-submit (current-buffer) :client vc-p4-client)
                                         ; Update its properties
       (dolist (file files)
         (vc-p4-state file nil t)))))

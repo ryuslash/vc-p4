@@ -398,7 +398,7 @@ Returns nil or raises an error on failure."
 ;; DO need to support "-i".
 ;; DO need to support specified changelist #'s.
 
-(defun p4-lowlevel-change (&optional buffer op)
+(cl-defun p4-lowlevel-change (&key buffer op client)
   "Creates or edits a P4 changelist from/to BUFFER.
 If optional OP is a number, then the corresponding changelist is
 retrieved into BUFFER, or into a new buffer if BUFFER is nil.  If OP
@@ -410,7 +410,8 @@ buffer is returned."
   (let* ((input-buffer (if (and op (not (numberp op))) buffer nil))
          (flag-arg (if (or (not op) (numberp op)) "-o" "-i"))
          (number-arg (if (numberp op) (list (number-to-string op))))
-         (args (append (list "change" flag-arg) number-arg))
+         (client-args (if client (list "-c" client)))
+         (args (append client-args (list "change" flag-arg) number-arg))
          alist info)
     (setq alist (p4-lowlevel-command-or-error args input-buffer nil))
     (setq info (p4-lowlevel-info-lines alist))
@@ -684,9 +685,11 @@ resolve.  Raises an error if the command fails."
 ;; Only need to support non-interactive use; therefore, only need to
 ;; support "p4 submit -i".
 
-(defun p4-lowlevel-submit (change-spec)
+(cl-defun p4-lowlevel-submit (change-spec &key client)
   "Calls `p4 submit' on CHANGE-SPEC, which should be a string or buffer."
-  (let (buffer)
+  (let* ((client-args (if client (list "-c" client)))
+         (args (append client-args (list "submit" "-i")))
+         buffer)
     (if (bufferp change-spec)
         (setq buffer change-spec)
       (setq buffer (p4-lowlevel-get-buffer-create
@@ -695,7 +698,7 @@ resolve.  Raises an error if the command fails."
         (set-buffer buffer)
         (erase-buffer)
         (insert change-spec)))
-    (p4-lowlevel-command-or-error (list "submit" "-i") buffer)))
+    (p4-lowlevel-command-or-error args buffer)))
 
 ;; Here's what we need to support from the "p4 sync" command, at least for the
 ;; time being:
