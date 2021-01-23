@@ -384,10 +384,12 @@ Returns nil or raises an error on failure."
    ;; file which already exists in the repository.
    (p4-lowlevel-command-or-error args)))
 
-(defun p4-lowlevel-delete (file)
+(cl-defun p4-lowlevel-delete (file &key client)
   "Tell Perforce to delet FILE from the repository.
 Returns nil or raises an error on failure."
-  (p4-lowlevel-command-or-error (list "delete" file)))
+  (let* ((client-args (if client (list "-c" client)))
+         (args (append client-args (list "delete" file))))
+   (p4-lowlevel-command-or-error args)))
 
 ;; Here's what we need to support from the "p4 change" command, at least for the
 ;; time being:

@@ -1015,7 +1015,7 @@ The difference to vc-do-command is that this function always invokes `p4'."
 
 (defun vc-p4-delete-file (file)
   "Tell perforce to delete FILE from the repository."
-  (p4-lowlevel-delete file))
+  (p4-lowlevel-delete file :client vc-p4-client))
 
 (defun vc-p4-switch-client (client)
   (interactive
