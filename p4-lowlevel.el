@@ -544,17 +544,18 @@ Returns non-nil on success or nil on failure (or raises an error)."
 ;; Do NOT need to support "-m".
 ;; Do NOT need to support the specification of multiple files.
 
-(defun p4-lowlevel-filelog (file &optional buffer long follow-branches limit)
+(cl-defun p4-lowlevel-filelog (file &key buffer long follow-branches limit client)
   "Fetch the p4 log of FILE and return a buffer containing it.
 If optional BUFFER is non-nil, put output in that buffer.  If optional
 LONG is non-nil, return long output (i.e., pass the `-l' flag).  If
 optional FOLLOW-BRANCHES is non-nil, include pre-branch log entries in
 output (i.e., pass the `-i' flag).  If LIMIT is non-nil, get only the
 last LIMIT log entries."
-  (let* ((long-flag (if long (list "-l") nil))
-         (branch-flag (if follow-branches (list "-i") nil))
-         (limit-flag (when limit (list "-m" (number-to-string limit))))
-         (args (append (list "filelog") long-flag branch-flag limit-flag (list file))))
+  (let* ((long-flag (if long (list "-l")))
+         (branch-flag (if follow-branches (list "-i")))
+         (limit-flag (if limit (list "-m" (number-to-string limit))))
+         (client-args (if client (list "-c" client)))
+         (args (append client-args (list "filelog") long-flag branch-flag limit-flag (list file))))
     (p4-lowlevel-command-into-buffer args (or buffer "log"))))
 
 (cl-defun p4-lowlevel-opened (file &key client)

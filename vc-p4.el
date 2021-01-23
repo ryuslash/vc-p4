@@ -430,7 +430,11 @@ comment COMMENT."
          (default-directory (file-name-directory file)))
     (with-current-buffer
         buffer
-      (p4-lowlevel-filelog file (current-buffer) (not shortlog) nil limit)
+      (p4-lowlevel-filelog file
+                           :buffer (current-buffer)
+                           :long (not shortlog)
+                           :limit limit
+                           :client vc-p4-client)
       ;; Insert the file name at the beginning.
       (goto-char (point-min))
       (insert "File:        " (file-name-nondirectory file) "\n"))))
