@@ -914,8 +914,8 @@ If DIRNAME is not specified, uses `default-directory'."
   "Return true if FILE is inside the p4 client hierarchy."
   (let* ((default-directory (file-name-directory file))
          (info (p4-lowlevel-info))
-         (root (alist-get "Client root" info))
-         (cwd (alist-get "Current directory" info)))
+         (root (alist-get "Client root" info nil nil #'string=))
+         (cwd (alist-get "Current directory" info nil nil #'string=)))
     (string-prefix-p root cwd)))
 
 (defun vc-p4-has-unresolved-conflicts-p (file)
