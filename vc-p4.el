@@ -370,8 +370,12 @@ comment COMMENT."
 
 (defun vc-p4-merge (file rev1 rev2)
   "Merge changes into Perforce FILE from REV1 to REV2."
-  (p4-lowlevel-integrate file file rev1 rev2 t)
-  (p4-lowlevel-resolve file)
+  (p4-lowlevel-integrate file file
+                         :rev1 rev1
+                         :rev2 rev2
+                         :force t
+                         :client vc-p4-client)
+  (p4-lowlevel-resolve file :client vc-p4-client)
   (vc-resynch-buffer file t t)
   (vc-p4-state file nil t)
   (if (vc-p4-has-unresolved-conflicts-p file)
@@ -381,7 +385,7 @@ comment COMMENT."
 (defun vc-p4-merge-news (file)
   "Merge new changes from Perforce into FILE."
   (p4-lowlevel-sync file)
-  (p4-lowlevel-resolve file)
+  (p4-lowlevel-resolve file :client vc-p4-client)
   (vc-resynch-buffer file t t)
   (vc-p4-state file nil t)
   (if (vc-p4-has-unresolved-conflicts-p file)

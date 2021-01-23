@@ -660,11 +660,13 @@ Optional CHANGELIST specifies the changelist to which to move it."
 ;; Do NOT need to support "-v".
 ;; Do NOT need to support the specification of multiple files.
 
-(defun p4-lowlevel-resolve (file)
+(cl-defun p4-lowlevel-resolve (file &key client)
   "Call `p4 resolve' on FILE.
 Specifies the `-af' and `-t' options to ensure a non-interactive
 resolve.  Raises an error if the command fails."
-  (p4-lowlevel-command-or-error (list "resolve" "-af" "-t" file)))
+  (let* ((client-args (if client (list "-c" client)))
+         (args (append client-args (list "resolve" "-af" "-t" file))))
+    (p4-lowlevel-command-or-error args)))
 
 ;; Here's what we need to support from the "p4 revert" command, at least for the
 ;; time being:
@@ -719,19 +721,19 @@ optional FORCE is non-nil, pass the `-f' flag."
          (args (append client-args (list "sync") force-args (list fullfile))))
     (p4-lowlevel-command-or-error args)))
 
-(defun p4-lowlevel-integrate (from-file to-file &optional rev1 rev2 force)
+(cl-defun p4-lowlevel-integrate (from-file to-file &key rev1 rev2 force client)
   "Call `p4 integrate' from FROM-FILE to TO-FILE, with optional revision
 range specified by REV1 and REV2, forcing the integration (i.e.,
 specifying `-f' to `p4 integrate' if FORCE is non-nil."
   (setq rev1 (p4-lowlevel-canonicalize-revision rev1)
         rev2 (p4-lowlevel-canonicalize-revision rev2))
-  (let ((force-list (if force (list "-f")))
-        (from-full (if (or rev1 rev2)
-                       (format "%s%s,%s" from-file (or rev1 "") (or rev2 ""))
-                     from-file)))
-    (p4-lowlevel-command-or-error (append (list "integrate")
-                                          (if force (list "-f"))
-                                          (list from-full to-file)))))
+  (let* ((force-arg (if force (list "-f")))
+         (from-full (if (or rev1 rev2)
+                        (format "%s%s,%s" from-file (or rev1 "") (or rev2 ""))
+                      from-file))
+         (client-args (if client (list "-c" client)))
+         (args (append client-args (list "integrate") force-arg (list from-full to-file))))
+    (p4-lowlevel-command-or-error args)))
 
 (defun p4-lowlevel-client-version (&optional noerror)
   "Returns the Perforce client version string from `p4 -V'.
