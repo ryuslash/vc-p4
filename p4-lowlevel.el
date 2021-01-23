@@ -603,9 +603,11 @@ files, then returns a list of lists of field-name/value elements."
         (car lists)
       lists)))
 
-(defun p4-lowlevel-info ()
+(cl-defun p4-lowlevel-info (&key client)
   "Return an alist representing the output of `p4 info'."
-  (let* ((base-alist (p4-lowlevel-command-or-error "info" nil nil t))
+  (let* ((client-args (if client (list "-c" client)))
+         (args (append client-args (list "info")))
+         (base-alist (p4-lowlevel-command-or-error args nil nil t))
          (info-elements (p4-lowlevel-re-assoc "^info" base-alist))
          line tag value info-alist element)
     (while info-elements

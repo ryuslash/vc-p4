@@ -913,7 +913,7 @@ If DIRNAME is not specified, uses `default-directory'."
 (defun vc-p4-is-in-client (file)
   "Return true if FILE is inside the p4 client hierarchy."
   (let* ((default-directory (file-name-directory file))
-         (info (p4-lowlevel-info))
+         (info (p4-lowlevel-info :client vc-p4-client))
          (root (alist-get "Client root" info nil nil #'string=))
          (cwd (alist-get "Current directory" info nil nil #'string=)))
     (string-prefix-p root cwd)))
