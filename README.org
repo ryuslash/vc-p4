@@ -1,0 +1,34 @@
+#+TITLE: vc-p4
+
+This package provides VC integration with the Perforce version control system.
+
+This package is quite old and was written for Emacs 23 I think. I'm trying to
+pull it into the next generation by making it work on Emacs 26.3 at the moment.
+
+* Road to v1
+
+  Before I can say that I can release version 1.0.0 of this project, I feel that
+  these features need to be present (this list is subject to change):
+
+  - Create new changelists.
+  - Modify existing changelists.
+  - Delete existing changelists.
+  - Move files between changelists.
+  - View changelist info in =vc-dir=.
+  - View repository information in =vc-dir=. (Things like the Client name, current
+    workspace, etc.)
+  - +Switch workspaces+.
+
+  Some of these features may already be present and working and I just haven't
+  discovered them yet, but until I feel confident that it can be done and is
+  part of my workflow, I'm keeping it on the list.
+
+* Change log
+
+  See the [[file:CHANGELOG.org][change log]].
+
+* Usage
+
+Customization options:
+
+- ~vc-p4-client~ :: The client to use to try to connect to Perforce. If you have multiple workspaces in Perforce you can set this as a directory-local variable to make sure you're connecting to the right Perforce workspace.
