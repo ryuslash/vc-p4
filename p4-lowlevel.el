@@ -459,7 +459,7 @@ value with `-m'; if S-VAL is non-nil, pass that value with `-s'."
 ;; DO need to support diffing a single file.
 ;; Do NOT need to support diffing multiple files.
 
-(defun p4-lowlevel-diff (files &optional rev buffer)
+(cl-defun p4-lowlevel-diff (files &key rev buffer client)
   "Run `p4 diff' on FILE at revision REV and return a buffer
 containing the results.  REV is in the syntax described by `p4 help
 revisions'.  If REV is nil, compare the client's sync'd revision to
@@ -478,13 +478,14 @@ that buffer."
   (let* ((file-specs (if rev
                          (mapcar (lambda (file) (concat file rev)) files)
                        files))
-         (diff-args (append (list "diff") p4-lowlevel-diff-switches
+         (client-args (if client (list "-c" client)))
+         (diff-args (append client-args (list "diff") p4-lowlevel-diff-switches
                             (list "-f" "-t") file-specs))
          (buffer (p4-lowlevel-command-into-buffer diff-args
                                                   (or buffer "diff"))))
     buffer))
 
-(defun p4-lowlevel-diff-s (file flag &key client)
+(cl-defun p4-lowlevel-diff-s (file flag &key client)
   "Run `p4 diff -s' on FILE, using FLAG as the argument to `-s', and
 return a list of the matching files."
   (p4-lowlevel-items-matching-tag
@@ -501,7 +502,7 @@ return a list of the matching files."
 ;; DO need to support "-t" (in fact, need to specify it all the time).
 ;; Do NOT need to support "-b".
 
-(defun p4-lowlevel-diff2 (file1 file2 &optional rev1 rev2 buffer)
+(cl-defun p4-lowlevel-diff2 (file1 file2 &key rev1 rev2 buffer client)
   "Run `p4 diff2' on FILE and FILE2 and return a buffer containing the
 results.  If optional REV1 and/or REV2 are non-nil, they specify the
 revisions to diff in the syntax described by `p4 help revisions'.  If
@@ -511,7 +512,8 @@ optional BUFFER is non-nil, output goes in that buffer.  Uses
         rev2 (p4-lowlevel-canonicalize-revision rev2))
   (let* ((file1-spec (if rev1 (concat file1 rev1) file1))
          (file2-spec (if rev2 (concat file2 rev2) file2))
-         (diff-args (append (list "diff2") p4-lowlevel-diff-switches
+         (client-args (if client (list "-c" client)))
+         (diff-args (append client-args (list "diff2") p4-lowlevel-diff-switches
                             (list "-t" file1-spec file2-spec)))
          (buffer (p4-lowlevel-command-into-buffer diff-args
                                                   (or buffer "diff"))))
@@ -614,7 +616,7 @@ files, then returns a list of lists of field-name/value elements."
                 info-alist (cons (cons tag value) info-alist))))
     (nreverse info-alist)))
 
-(defun p4-lowlevel-print (file &optional rev output-format quiet)
+(cl-defun p4-lowlevel-print (file &key rev output-format quiet client)
   "Retrieve the contents of FILE using `p4 print'.
 If optional REV is non-nil, retrieve that revision, which should be in
 the syntax described by `p4 help revisions'.  Optional OUTPUT-FORMAT
@@ -623,7 +625,8 @@ QUIET is non-nil, then the `-q' flag is passed to `p4 print'."
   (setq rev (p4-lowlevel-canonicalize-revision rev))
   (let* ((fullfile (if rev (concat file rev) file))
          (quiet-args (if quiet (list "-q")))
-         (args (append (list "print") quiet-args (list fullfile))))
+         (client-args (if client (list "-c" client)))
+         (args (append client-args (list "print") quiet-args (list fullfile))))
     (p4-lowlevel-command-or-error args nil output-format)))
 
 ;; Here's what we need to support from the "p4 reopen" command, at least for the

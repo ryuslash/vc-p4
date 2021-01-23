@@ -290,7 +290,11 @@ administered by Perforce."
                          file)))))
 
 (defun vc-p4-find-version (file rev buffer)
-  (p4-lowlevel-print file rev buffer t))
+  (p4-lowlevel-print file
+                     :rev rev
+                     :output-format buffer
+                     :quiet t
+                     :client vc-p4-client))
 
 (defun vc-p4-checkin (files rev comment)
   "Check FILES into Perforce.  Error if REV is non-nil.  Check in with
@@ -520,6 +524,8 @@ files under the default directory otherwise."
                   ((stringp buff) (get-buffer-create buff))
                   (t (get-buffer-create "*vc-diff*"))))
          (files (if (atom file-or-files) (list file-or-files) file-or-files))
+         (vc-p4-client (with-current-buffer (find-file (car files))
+                    vc-p4-client))
          (inhibit-read-only t))
     (cond
      ((and (null rev1) (null rev2))
@@ -554,7 +560,10 @@ files under the default directory otherwise."
                           file))))
           (dolist (file deleted)
             (with-temp-buffer
-              (p4-lowlevel-print file nil (current-buffer) :quiet)
+              (p4-lowlevel-print file
+                                 :output-format (current-buffer)
+                                 :quiet t
+                                 :client vc-p4-client)
               (goto-char (point-min))
               (while (search-forward-regexp "^text: " nil t)
                 (replace-match "" nil nil))
@@ -580,7 +589,7 @@ files under the default directory otherwise."
             (let (temp-buffer)
               (unwind-protect
                   (progn
-                    (setq temp-buffer (p4-lowlevel-diff modified))
+                    (setq temp-buffer (p4-lowlevel-diff modified :client vc-p4-client))
                     (insert-buffer-substring temp-buffer))
                 (when (buffer-live-p temp-buffer)
                   (kill-buffer temp-buffer))))))))
@@ -596,12 +605,16 @@ files under the default directory otherwise."
                   (cond
                    ((and (not rev1) rev2)
                     (p4-lowlevel-diff2 file file
-                                       (vc-file-getprop file 'vc-workfile-version)
-                                       rev2))
+                                       :rev1 (vc-file-getprop file 'vc-workfile-version)
+                                       :rev2 rev2
+                                       :client vc-p4-client))
                    ((and rev1 rev2)
-                    (p4-lowlevel-diff2 file file rev1 rev2))
+                    (p4-lowlevel-diff2 file file
+                                       :rev1 rev1
+                                       :rev2 rev2
+                                       :client vc-p4-client))
                    ((and rev1 (not rev2))
-                    (p4-lowlevel-diff file rev1))))
+                    (p4-lowlevel-diff file :rev rev1 :client vc-p4-client))))
             (insert-buffer-substring temp-buffer)
             (kill-buffer temp-buffer))))))
 
