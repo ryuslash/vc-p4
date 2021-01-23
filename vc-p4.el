@@ -384,7 +384,7 @@ comment COMMENT."
 
 (defun vc-p4-merge-news (file)
   "Merge new changes from Perforce into FILE."
-  (p4-lowlevel-sync file)
+  (p4-lowlevel-sync file :client vc-p4-client)
   (p4-lowlevel-resolve file :client vc-p4-client)
   (vc-resynch-buffer file t t)
   (vc-p4-state file nil t)
