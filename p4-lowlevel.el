@@ -642,12 +642,13 @@ QUIET is non-nil, then the `-q' flag is passed to `p4 print'."
 ;; Do NOT need to support "-t".
 ;; Do NOT need to support the specification of multiple files.
 
-(defun p4-lowlevel-reopen (file &optional changelist)
+(cl-defun p4-lowlevel-reopen (file &key changelist client)
   "Call `p4 reopen' on FILE.
 Optional CHANGELIST specifies the changelist to which to move it."
-  (p4-lowlevel-command-or-error (append (list "reopen")
-                                        (if changelist (list "-c" changelist) nil)
-                                        (list file))))
+  (let* ((client-args (if client (list "-c" client)))
+         (changelist-args (if changelist (list "-c" changelist)))
+         (args (append client-args (list "reopen") changelist-args (list file))))
+   (p4-lowlevel-command-or-error args)))
 
 ;; Here's what we need to support from the "p4 resolve" command, at least for
 ;; the time being:

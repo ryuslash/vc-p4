@@ -407,8 +407,10 @@ comment COMMENT."
       (error "Can't specify version when stealing Perforce lock."))
   ;; Must set default-directory because this is called in a mail send hook and
   ;; thus not with the current buffer set to the file being reopened.
-  (let ((default-directory (file-name-directory file)))
-    (p4-lowlevel-reopen file)))
+  (let ((default-directory (file-name-directory file))
+        (vc-p4-client (with-current-buffer (find-file file)
+                   vc-p4-client)))
+    (p4-lowlevel-reopen file :client vc-p4-client)))
 
 (defun vc-p4-print-log (files &optional buffer shortlog revision limit)
   "Print Perforce log for FILE into *vc* buffer."
