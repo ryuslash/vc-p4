@@ -271,7 +271,7 @@ special case of a Perforce file that is added but not yet committed."
                 (p4-lowlevel-revert file :client vc-p4-client))
               (p4-lowlevel-edit file :client vc-p4-client))
           (error "File %s already opened for delete." file))
-      (p4-lowlevel-add file))))
+      (p4-lowlevel-add file :client vc-p4-client))))
 
 (defun vc-p4-init-revision ()
   "Returns `1', the default initial version for Perforce files."

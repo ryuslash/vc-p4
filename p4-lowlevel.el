@@ -374,13 +374,15 @@ commands."
 ;; Do NOT need to support "-t".
 ;; Do NOT need to support the specification of multiple files.
 
-(defun p4-lowlevel-add (file)
+(cl-defun p4-lowlevel-add (file &key client)
   "Tell Perforce to add FILE to the repository.
 Returns nil or raises an error on failure."
-  ;; Note that because "p4 -s add" has bugs, at least as of p4 99.2, this won't
-  ;; necessarily detect when the add fails, e.g., because of an attempt to add a
-  ;; file which already exists in the repository.
-  (p4-lowlevel-command-or-error (list "add" file)))
+  (let* ((client-args (if client (list "-c" client)))
+         (args (append client-args (list "add" file))))
+   ;; Note that because "p4 -s add" has bugs, at least as of p4 99.2, this won't
+   ;; necessarily detect when the add fails, e.g., because of an attempt to add a
+   ;; file which already exists in the repository.
+   (p4-lowlevel-command-or-error args)))
 
 (defun p4-lowlevel-delete (file)
   "Tell Perforce to delet FILE from the repository.
