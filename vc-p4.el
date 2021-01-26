@@ -296,14 +296,17 @@ administered by Perforce."
                      :quiet t
                      :client vc-p4-client))
 
-(defun vc-p4-checkin (files rev comment)
+(defun vc-p4-checkin (files comment &optional rev)
   "Check FILES into Perforce.  Error if REV is non-nil.  Check in with
 comment COMMENT."
   (if rev
       (error "Can't specify revision for Perforce checkin."))
   (let* (;; XXX: default-directory?  this should work for most (all?) cases
          (default-directory (file-name-directory (car files)))
-         (change-buffer (p4-lowlevel-change :client vc-p4-client))
+		 (current-client
+          (with-current-buffer (find-file-noselect (car files))
+			vc-p4-client))
+         (change-buffer (p4-lowlevel-change :client current-client))
          (indent-tabs-mode 1)
          insertion-start change-number)
     (dolist (file files)
@@ -315,8 +318,8 @@ comment COMMENT."
       (re-search-forward "^Description:\\s-*\n")
       (kill-line 1)
       (setq insertion-start (point))
-      (insert comment "\n")
-      (indent-rigidly insertion-start (point) 8)
+      (insert (car (log-edit-extract-headers nil comment)) "\n")
+      (indent-rigidly insertion-start (point) tab-width)
       (re-search-forward "^Files:\\s-*\n")
       (delete-region (point) (point-max))
       (dolist (file files)
@@ -324,12 +327,12 @@ comment COMMENT."
       (setq change-number (p4-lowlevel-change
                            :buffer (current-buffer)
                            :op t
-                           :client vc-p4-client))
+                           :client current-client))
       (p4-lowlevel-change
        :buffer (current-buffer)
        :op change-number
-       :client vc-p4-client)
-      (p4-lowlevel-submit (current-buffer) :client vc-p4-client)
+       :client current-client)
+      (p4-lowlevel-submit (current-buffer) :client current-client)
                                         ; Update its properties
       (dolist (file files)
         (vc-p4-state file nil t)))))
