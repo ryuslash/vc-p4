@@ -20,6 +20,14 @@ Both =vc-p4.el= and =p4-lowlevel.el= now use lexical binding instead of dynamic 
 
 This interactive command lets you log in to Perforce when your session has expired.
 
+** FIXED ~vc-p4-checkin~ command
+
+~vc-p4~ should now be usable to check files into Perforce.
+
+** FIXED Responding to the situation where a file needs to be updated
+
+VC expects the status to be reported as ~needs-update~, not ~needs-patch~.
+
 * 0.2.1 -- 2020-05-27
 ** FIXED Recognition of sub-directories of Perforce repos
 
