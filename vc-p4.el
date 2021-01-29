@@ -1034,4 +1034,27 @@ The difference to vc-do-command is that this function always invokes `p4'."
   "Check if there is an active session for Perforce."
   (p4-lowlevel-login :status t))
 
+(defun vc-p4-dir-extra-headers (dir)
+  (let ((extra-info (p4-lowlevel-info :client vc-p4-client)))
+    (concat
+     (propertize "Client     :" 'face 'font-lock-type-face)
+     " "
+     (propertize (alist-get "Client name" extra-info nil nil #'string=)
+                 'face 'font-lock-variable-name-face)
+     "\n"
+     (propertize "Stream     :" 'face 'font-lock-type-face)
+     " "
+     (propertize (alist-get "Client stream" extra-info nil nil #'string=)
+                 'face 'font-lock-variable-name-face)
+     "\n"
+     (propertize "Root       :" 'face 'font-lock-type-face)
+     " "
+     (propertize (alist-get "Client root" extra-info nil nil #'string=)
+                 'face 'font-lock-variable-name-face)
+     "\n"
+     (propertize "Server     :" 'face 'font-lock-type-face)
+     " "
+     (propertize (alist-get "Server address" extra-info nil nil #'string=)
+                 'face 'font-lock-variable-name-face))))
+
 (provide 'vc-p4)

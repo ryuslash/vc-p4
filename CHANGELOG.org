@@ -28,6 +28,10 @@ This interactive command lets you log in to Perforce when your session has expir
 
 VC expects the status to be reported as ~needs-update~, not ~needs-patch~.
 
+** ADDED Extra headers in ~vc-dir~
+
+Specifically the Server, root directory, client, and stream are shown in the headers.
+
 * 0.2.1 -- 2020-05-27
 ** FIXED Recognition of sub-directories of Perforce repos
 
