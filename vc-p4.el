@@ -167,7 +167,7 @@ compare non-open files to the depot version."
                    (and (null haveRev) (string= headAction "delete")))
                   'up-to-date)
                  (t
-                  'needs-patch))))
+                  'needs-update))))
           (vc-file-setprop file 'vc-p4-did-fstat t)
           (vc-file-setprop file 'vc-p4-depot-file depotFile)
           (vc-file-setprop file 'vc-p4-action action)
@@ -225,7 +225,7 @@ revision."
     (and (not (equal (vc-file-getprop file 'vc-p4-action) "add"))
          (not (equal (vc-file-getprop file 'vc-p4-action) "delete"))
          (or (equal state 'up-to-date)
-             (equal state 'needs-patch)
+             (equal state 'needs-update)
              (p4-lowlevel-diff-s file "r" :client vc-p4-client)))))
 
 (defun vc-p4-mode-line-string (file)
@@ -237,14 +237,14 @@ special case of a Perforce file that is added but not yet committed."
     (if (or (not rev) (string= rev "0"))
         (setq rev "@@"))
     (cond ((or (eq state 'up-to-date)
-               (eq state 'needs-patch))
+               (eq state 'needs-update))
            (concat "P4-" rev))
           ((stringp state)
            (concat "P4:" state ":" rev))
           (t
            ;; Not just for the 'edited state, but also a fallback
            ;; for all other states.  Think about different symbols
-           ;; for 'needs-patch and 'needs-merge.
+           ;; for 'needs-update and 'needs-merge.
            (concat "P4:" rev)))))
 
 (defun vc-p4-register (files &optional rev comment)
