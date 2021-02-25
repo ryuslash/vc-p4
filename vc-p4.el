@@ -1057,4 +1057,8 @@ The difference to vc-do-command is that this function always invokes `p4'."
      (propertize (alist-get "Server address" extra-info nil nil #'string=)
                  'face 'font-lock-variable-name-face))))
 
+(defun vc-p4-rename (old new)
+  "Rename OLD to NEW in Perforce."
+  (p4-lowlevel-rename old new))
+
 (provide 'vc-p4)

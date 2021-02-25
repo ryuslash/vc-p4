@@ -820,4 +820,21 @@ current ticket is displayed (if there is one) instead."
       (p4-not-logged-in-error
        (unless status (signal (car err) (cdr err)))))))
 
+(cl-defun p4-lowlevel-rename (from-file to-file &key changelist preview server-only)
+  "Call ‘p4 move -r’ with arguments.
+FROM-FILE is the source file. TO-FILE is the destination.
+CHANGELIST specifies which changelist the operation should be
+added to. If PREVIEW is specified, don’t actually do the
+operation. If SERVER-ONLY is specified it means to do the move
+only on the server and not touch the local files."
+  (let* ((changelist-args (and changelist `("-c" ,changelist)))
+         (preview-args (and preview '("-n")))
+         (server-only-args (and server-only '("-k")))
+         (args (append '("move" "-r")
+                       changelist-args
+                       preview-args
+                       server-only-args
+                       (list from-file to-file))))
+    (p4-lowlevel-command-or-error args)))
+
 (provide 'p4-lowlevel)
