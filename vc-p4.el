@@ -303,7 +303,7 @@ FILE can point to either a file or a directory."
                            (file-name-as-directory file)
                          file)))))
 
-(defun vc-p4-find-version (file rev buffer)
+(defun vc-p4-find-revision (file rev buffer)
   "Get the contents of FILE at revision REV and put it into BUFFER."
   (p4-lowlevel-print file
                      :rev rev
