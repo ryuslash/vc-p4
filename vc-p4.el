@@ -59,9 +59,11 @@
 
 ;;; Code:
 
+(require 'log-edit)
+
 (eval-and-compile
   (if (not (string-match "XEmacs" emacs-version))
-          (require 'vc-annotate))
+      (require 'vc-annotate))
   (require 'vc-hooks)
   (require 'vc)
   (require 'ediff))
@@ -182,9 +184,9 @@ compare non-open files to the depot version."
           (vc-file-setprop file 'vc-workfile-version haveRev)
           state)))))
 
-(defun vc-p4-dir-status-files (dir files update-function)
+(defun vc-p4-dir-status-files (dir _files update-function)
   "Find status information for files in the directory DIR.
-FILES is ignored. The UPDATE-FUNCTION is used to process the
+_FILES is ignored. The UPDATE-FUNCTION is used to process the
 results of this function."
   ;; XXX: this should be asynchronous.
   (let ((lists (p4-lowlevel-fstat
@@ -208,9 +210,9 @@ results of this function."
   (vc-p4-state file)
   (vc-file-getprop file 'vc-workfile-version))
 
-(defun vc-p4-previous-revision (file rev)
-  "Return the revision of FILE before REV.
-If FILE’s revision is 1, return that revision."
+(defun vc-p4-previous-revision (_file rev)
+  "Return the previous revision before REV.
+_FILE is ignored."
   (let ((newrev (1- (string-to-number rev))))
     (when (< 0 newrev)
       (number-to-string newrev))))
@@ -221,9 +223,10 @@ If FILE’s revision is 1, return that revision."
   (string= (vc-file-getprop file 'vc-latest-version)
            (vc-file-getprop file 'vc-workfile-version)))
 
-(defun vc-p4-checkout-model (file)
+(defun vc-p4-checkout-model (_file)
   "Return the checkout model for Perforce (`announce').
-Perforce only has one checkout model for all files, so FILE is ignored."
+Perforce only has one checkout model for all files, so _FILE is
+ignored."
   'announce)
 
 (defun vc-p4-workfile-unchanged-p (file)
@@ -324,8 +327,7 @@ Check in with comment COMMENT. Error if REV is non-nil."
     (dolist (file files)
       (if (vc-p4-has-unresolved-conflicts-p file)
           (error "File %s has unresolved conflicts" file)))
-    (save-excursion
-      (set-buffer change-buffer)
+    (with-current-buffer change-buffer
       (goto-char (point-min))
       (re-search-forward "^Description:\\s-*\n")
       (kill-line 1)
@@ -351,8 +353,7 @@ Check in with comment COMMENT. Error if REV is non-nil."
 
 (defun vc-p4-checkout (file &optional rev)
   "Checkout FILE from Perforce, optionally at revision REV."
-  (let ((default-directory (file-name-directory file))
-        buffer)
+  (let ((default-directory (file-name-directory file)))
     ;; Make sure we've got all the current state of the file
     (vc-p4-state file)
     (cond
@@ -366,9 +367,9 @@ Check in with comment COMMENT. Error if REV is non-nil."
     (p4-lowlevel-edit file :client vc-p4-client))
   (vc-p4-state file nil t))
 
-(defun vc-p4-revert (file contents-done)
+(defun vc-p4-revert (file _contents-done)
   "Revert FILE in Perforce.
-CONTENTS-DONE is ignored."
+_CONTENTS-DONE is ignored."
   (let ((action (vc-file-getprop file 'vc-p4-action)))
     (cond
      ((null action)
@@ -434,9 +435,9 @@ otherwise this function will raise an error."
                    vc-p4-client)))
     (p4-lowlevel-reopen file :client vc-p4-client)))
 
-(defun vc-p4-print-log (files &optional buffer shortlog revision limit)
+(defun vc-p4-print-log (files &optional buffer shortlog _revision limit)
   "Print Perforce log for FILES into BUFFER.
-If SHORTLOG is non-nil print a short version of the log. REVISION
+If SHORTLOG is non-nil print a short version of the log. _REVISION
 is ignored. If LIMIT is non-nil only print that many log messages."
   ;; `log-view-mode' needs to have the file name in order to function
   ;; correctly. "p4 logview" does not print it, so we insert it here by
@@ -493,9 +494,9 @@ is ignored. If LIMIT is non-nil only print that many log messages."
         (goto-char start)
         (recenter 0))))))
 
-(defun vc-p4-wash-log (file)
+(defun vc-p4-wash-log (_file)
   "Remove all non-comment information from the log in the current buffer.
-FILE is ignored."
+_FILE is ignored."
   (goto-char (point-min))
   (delete-non-matching-lines "^\t"))
 
@@ -684,7 +685,7 @@ Annotate version VERSION if it's specified."
                          file))
             (starting-date (if current-prefix-arg
                                (read-string "Starting date: (default none) ")))
-            log-buffer times args)
+            args)
         (setq args (append (list  buffer nil vc-p4-annotate-command nil)
                            (if starting-date
                                (list "--after" starting-date))
@@ -696,8 +697,7 @@ Annotate version VERSION if it's specified."
 (defun vc-p4-read-output (buffer)
   "Read the first line of BUFFER and return it.
 Read lines are deleted from buffer."
-  (save-excursion
-    (set-buffer buffer)
+  (with-current-buffer buffer
     (goto-char (point-min))
     (forward-line)
     (let ((line (buffer-substring (point-min) (point))))
@@ -710,16 +710,14 @@ Read lines are deleted from buffer."
           line)))))
 
 ;;; Adapted from p4.el
-(defun vc-p4-annotate-command-internal (file buffer &optional version)
+(defun vc-p4-annotate-command-internal (file buffer &optional _version)
   "Execute \"p4 annotate\" on FILE, inserting the contents in BUFFER.
-Optional argument VERSION is a version to annotate from."
+_VERSION is ignored."
   ;; XXX maybe not needed, but just in case.
   (vc-setup-buffer buffer)
   ;;   (with-current-buffer buffer
   (let ((file-name file)
         (file-spec file)
-        (blame-branch-regex
-         "^\\.\\.\\. \\.\\.\\. branch from \\(//[^#]*\\)#")
         (blame-change-regex
          (concat "^\\.\\.\\. #"     "\\([0-9]+\\)"  ;; revision
                  "\\s-+change\\s-+" "\\([0-9]+\\)"  ;; change
@@ -728,7 +726,6 @@ Optional argument VERSION is a version to annotate from."
                  "\\s-+by\\s-+"     "\\([^ \t]+\\)" ;; author
                  "@"))
         head-name     ; file spec of the head revision for this blame assignment
-        branch-p      ; have we tracked into a branch?
         cur-file      ; file name of the current branch during blame assignment
         change ch-alist fullname head-rev headseen)
 
@@ -796,12 +793,7 @@ Optional argument VERSION is a version to annotate from."
                         (cons
                          (cons ch (list rev date author cur-file)) ch-alist))
                   (if (not head-rev) (setq head-rev rev))
-                  (setq headseen t))))
-
-            ;; not if we have entered a branch (this used to be used, isn't
-            ;; right now - maybe again later:
-            (if (and headseen (looking-at blame-branch-regex))
-                (setq branch-p t)))
+                  (setq headseen t)))))
           (forward-line))))
 
     (if (< (length ch-alist) 1)
@@ -812,8 +804,7 @@ Optional argument VERSION is a version to annotate from."
           (tmp-alst (copy-alist ch-alist)))
       ;; (p4-exec-p4 ch-buffer (list "print" "-q" (concat cur-file "@" base-ch)) t)
       (vc-p4-command ch-buffer nil nil "print" "-q" (concat cur-file "@" base-ch))
-      (save-excursion
-        (set-buffer ch-buffer)
+      (with-current-buffer ch-buffer
         (goto-char (point-min))
         (while (re-search-forward ".*\n" nil t)
           (replace-match (concat base-ch "\n"))))
@@ -838,7 +829,6 @@ Optional argument VERSION is a version to annotate from."
                       "diff2" (format "%s@%d" file1 ch-1)
                       (format "%s@%d" file2 ch-2))
             (save-excursion
-              ;;(set-buffer buffer)
               (goto-char (point-max))
               (while (re-search-backward blame-revision-regex nil t)
                 (let ((la (string-to-number (match-string 1)))
@@ -854,8 +844,7 @@ Optional argument VERSION is a version to annotate from."
                          (setq la (1+ la)))
                         ((string= op "d")
                          (setq ra (1+ ra))))
-                  (save-excursion
-                    (set-buffer ch-buffer)
+                  (with-current-buffer ch-buffer
                     (goto-line la)
                     (let ((beg (point)))
                       (forward-line (1+ (- lb la)))
@@ -876,9 +865,8 @@ Optional argument VERSION is a version to annotate from."
                           " *\\([0-9]+\\)"               ;; change
                           " *\\([0-9]+\\)"               ;; revision
                           " "))
-                 xth-rev xth-date xth-auth xth-file)
-        (save-excursion
-          (set-buffer buffer)
+                 xth-rev xth-date xth-auth)
+        (with-current-buffer buffer
           (goto-line 2)
           (move-to-column 0)
           (insert (format "%10s %7s %6s %4s\n" "Date" "Author" "Change"  "Rev"))
@@ -892,21 +880,16 @@ Optional argument VERSION is a version to annotate from."
               (setq change-data (cdr (assq cnum ch-alist))
                     xth-rev     (nth 0 change-data)
                     xth-date    (nth 1 change-data)
-                    xth-auth    (nth 2 change-data)
-                    xth-file    (nth 3 change-data))
+                    xth-auth    (nth 2 change-data))
 
               (insert
                (format "%10s %7s %6d %4d " xth-date xth-auth cnum xth-rev))
               (move-to-column 0)
               (if (looking-at blame-index-regex)
-                  (let ((nth-cnum (match-string 3))
-                        (nth-revn (match-string 4))
-                        (nth-user (match-string 2)))
-                    ;; truncate the user name:
-                    (let ((start (+ (match-beginning 2) 7))
-                          (end (match-end 2)))
-                      (if (> end start)
-                          (delete-region start end))))))
+                  (let ((start (+ (match-beginning 2) 7))
+                        (end (match-end 2)))
+                    (if (> end start)
+                        (delete-region start end)))))
             (setq old-cnum cnum)
             (forward-line))))
 
@@ -937,8 +920,9 @@ days. Moves the point to the end of the annotation."
     (beginning-of-line)
     (if (looking-at vc-p4-annotate-re) (match-string-no-properties 3))))
 
-(defun vc-p4-previous-version (file rev)
-  "Return the Perforce revision of FILE prior to REV."
+(defun vc-p4-previous-version (_file rev)
+  "Return the Perforce revision prior to REV.
+_FILE is ignored."
   (number-to-string (- (string-to-number rev) 1)))
 
 (defun vc-p4-find-p4config (&optional dirname)
@@ -1015,10 +999,8 @@ sub-block within it."
   "Search for P4 conflict markers in BUFFER and select the WHICH text of each.
 WHICH should be either 1, 2, or 3 to indicate the first, second or
 third sub-block in each conflict block."
-  (let (block-list block-start block-end sub-start sub-end sublist subcount
-                   replacement)
-    (save-excursion
-      (set-buffer buffer)
+  (let (block-list block-start block-end subcount replacement)
+    (with-current-buffer buffer
       (while (setq block-list (vc-p4-has-unresolved-conflicts-p buffer))
         (setq block-start (car block-list)
               block-end (cadr block-list)

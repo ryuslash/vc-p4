@@ -104,8 +104,7 @@ Returns the buffer containing the program output."
                     (temp-name " *p4-lowlevel-output*")
                     (output-buffer (or output (p4-lowlevel-get-buffer-create temp-name)))
                     (my-default-directory default-directory))
-    (save-excursion
-      (set-buffer output-buffer)
+    (with-current-buffer output-buffer
       (while (and my-default-directory
                   (not (file-exists-p my-default-directory))
                   (not (string= "" my-default-directory)))
@@ -323,8 +322,8 @@ NOERROR is true, then returns nil rather than raising an error."
     (cond
      (errors (setq return-value nil))
      ((eq output-format 'string)
-      (save-excursion (set-buffer output-buffer)
-                      (setq return-value (buffer-string)))
+      (with-current-buffer output-buffer
+        (setq return-value (buffer-string)))
       (kill-buffer output-buffer))
      ((or (eq output-format 'buffer) (bufferp output-format))
       (setq return-value output-buffer))
@@ -342,10 +341,8 @@ that buffer. Returns the buffer."
   (let* ((output-alist (p4-lowlevel-command-or-error args))
          (output-buffer (if (bufferp buffer) buffer
                           (p4-lowlevel-get-buffer-create
-                           (concat " *p4-lowlevel-" buffer "*"))))
-         text)
-    (save-excursion
-      (set-buffer output-buffer)
+                           (concat " *p4-lowlevel-" buffer "*")))))
+    (with-current-buffer output-buffer
       (erase-buffer)
       (insert (p4-lowlevel-lines-matching-tag "^\\(text\\|info\\)" output-alist))
       output-buffer)))
@@ -433,8 +430,7 @@ as the Perforce client to use."
       (if (not buffer)
           (setq buffer (p4-lowlevel-get-buffer-create
                         " *p4-lowlevel-change*")))
-      (save-excursion
-        (set-buffer buffer)
+      (with-current-buffer buffer
         (erase-buffer)
         (insert (p4-lowlevel-info-lines alist))
         buffer))))
@@ -741,8 +737,7 @@ Perforce client to use for the operation."
         (setq buffer change-spec)
       (setq buffer (p4-lowlevel-get-buffer-create
                     " *p4-lowlevel-submit-input*"))
-      (save-excursion
-        (set-buffer buffer)
+      (with-current-buffer buffer
         (erase-buffer)
         (insert change-spec)))
     (p4-lowlevel-command-or-error args buffer)))
@@ -804,8 +799,7 @@ Argument NAME is passed directly to `get-buffer-create', so check
 the documentation for that function to see its purpose."
   (let ((buf (get-buffer-create name))
         (caller-default-directory default-directory))
-    (save-excursion
-      (set-buffer buf)
+    (with-current-buffer buf
       (setq default-directory caller-default-directory))
     buf))
 
