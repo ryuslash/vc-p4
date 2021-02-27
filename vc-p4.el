@@ -77,25 +77,27 @@
 (put 'P4 'vc-functions nil)
 
 (defcustom vc-p4-require-p4config nil
-  "If non-nil and the `P4CONFIG' environment variable is set, then
-only perform p4 operations on a file when a P4CONFIG file can be found
-in one of its parent directories.  This is useful if P4 operations are
-expensive to start, e.g., if you are connect to the network over a
-slow dialup connection and/or using a SSH tunnel for P4 access.  To
-avoid delays when opening non-P4 files, simply set P4CONFIG as
-described in the Perforce documentation, create an empty P4CONFIG file
-at the root of your client workspace, and set `vc-p4-require-p4config'
-to t."
+  "Flag indicating the ‘P4CONFIG’ environment variable is required.
+If non-nil and the ‘P4CONFIG’ environment variable is set, then
+only perform p4 operations on a file when a P4CONFIG file can be
+found in one of its parent directories. This is useful if P4
+operations are expensive to start, e.g., if you are connect to
+the network over a slow dial-up connection and/or using a SSH
+tunnel for P4 access. To avoid delays when opening non-P4 files,
+simply set P4CONFIG as described in the Perforce documentation,
+create an empty P4CONFIG file at the root of your client
+workspace, and set ‘vc-p4-require-p4config’ to t."
   :type 'boolean
   :group 'vc)
 
 (defcustom vc-p4-annotate-command nil
   "*Specifies the name of a command to call to annotate Perforce files.
-If nil, then `vc-p4-annotate-command-internal' will be used.
-I recommend //guest/jonathan_kamens/p4pr.perl in the Perforce
-repository public.perforce.com:1666.  Note that you need a version of
-this script which accept `--after=date', if you want to be able to
-specify a starting date when you run C-u C-x v g."
+If nil, then `vc-p4-annotate-command-internal' will be used. I
+recommend //guest/jonathan_kamens/p4pr.perl in the Perforce
+repository public.perforce.com:1666. Note that you need a version
+of this script which accept `--after=date', if you want to be
+able to specify a starting date when you run \\[vc-annotate] with
+a prefix argument."
   :type 'string
   :group 'vc)
 
@@ -110,7 +112,8 @@ Perforce has per-file revisions."
   'file)
 
 (defun vc-p4-create-repo ()
-  (error "create-repo not supported yet for P4"))
+  "This function is not supported."
+  (error "The create-repo function isn’t supported yet for P4"))
 
 (defun vc-p4-registered (file)
   "Return non-nil is FILE is handled by Perforce."
@@ -130,10 +133,10 @@ Perforce has per-file revisions."
             t)))))
 
 (defun vc-p4-state (file &optional fstat-list force dont-compare-nonopened)
-  "Returns the current version control state of FILE in Perforce.
+  "Return the current version control state of FILE in Perforce.
 If optional FSTAT-LIST is non-nil, use that list of attributes
 from p4-lowlevel-fstat instead of calling it.  If optional FORCE
-is non-nil, refetch all properties even if properties were
+is non-nil, re-fetch all properties even if properties were
 previously fetched.  If DONT-COMPARE-NONOPENED is non-nil, don't
 compare non-open files to the depot version."
   (if (and (not force) (vc-file-getprop file 'vc-p4-did-fstat))
@@ -180,7 +183,9 @@ compare non-open files to the depot version."
           state)))))
 
 (defun vc-p4-dir-status-files (dir files update-function)
-  "Find information for `vc-dir'."
+  "Find status information for files in the directory DIR.
+FILES is ignored. The UPDATE-FUNCTION is used to process the
+results of this function."
   ;; XXX: this should be asynchronous.
   (let ((lists (p4-lowlevel-fstat
                 (format "%s/..." (directory-file-name (expand-file-name dir)))
@@ -199,28 +204,30 @@ compare non-open files to the depot version."
     (funcall update-function nil nil)))
 
 (defun vc-p4-working-revision (file)
-  "Returns the Perforce version of FILE."
+  "Return the Perforce version of FILE."
   (vc-p4-state file)
   (vc-file-getprop file 'vc-workfile-version))
 
 (defun vc-p4-previous-revision (file rev)
+  "Return the revision of FILE before REV.
+If FILE’s revision is 1, return that revision."
   (let ((newrev (1- (string-to-number rev))))
     (when (< 0 newrev)
       (number-to-string newrev))))
 
 (defun vc-p4-latest-on-branch-p (file)
-  "Returns non-nil if the Perforce version of FILE is the head
-revision."
+  "Return non-nil if the Perforce version of FILE is the head revision."
   (vc-p4-state file)
   (string= (vc-file-getprop file 'vc-latest-version)
            (vc-file-getprop file 'vc-workfile-version)))
 
 (defun vc-p4-checkout-model (file)
-  "Returns the checkout model for Perforce (`announce')."
+  "Return the checkout model for Perforce (`announce').
+Perforce only has one checkout model for all files, so FILE is ignored."
   'announce)
 
 (defun vc-p4-workfile-unchanged-p (file)
-  "Returns non-nil if FILE is unchanged from the version in Perforce."
+  "Return non-nil if FILE is unchanged from the version in Perforce."
   (let ((state (vc-p4-state file)))
     (and (not (equal (vc-file-getprop file 'vc-p4-action) "add"))
          (not (equal (vc-file-getprop file 'vc-p4-action) "delete"))
@@ -229,7 +236,7 @@ revision."
              (p4-lowlevel-diff-s file "r" :client vc-p4-client)))))
 
 (defun vc-p4-mode-line-string (file)
-  "Return string for placement into the modeline for FILE.
+  "Return string for placement into the mode-line for FILE.
 Compared to the default implementation, this function handles the
 special case of a Perforce file that is added but not yet committed."
   (let ((state   (vc-state file))
@@ -248,10 +255,14 @@ special case of a Perforce file that is added but not yet committed."
            (concat "P4:" rev)))))
 
 (defun vc-p4-register (files &optional rev comment)
+  "Register FILES with Perforce.
+REV can only be 1, Perforce doesn’t support registering at any
+other revision. COMMENT can only be nil or the empty string since
+Perforce doesn’t support adding a comment to registering a file."
   (if (and rev (not (string= rev "1")))
-      (error "Can't specify revision when registering Perforce file."))
+      (error "Can't specify revision when registering Perforce file"))
   (if (and comment (not (string= comment "")))
-      (error "Can't specify comment when registering Perforce file."))
+      (error "Can't specify comment when registering Perforce file"))
   ;; In emacs-23 vc-register has a list of files as a parameter,
   ;; before it used to be just a single file. We don't support that
   ;; interface yet, so just use the first file in the list.
@@ -270,16 +281,16 @@ special case of a Perforce file that is added but not yet committed."
                     (rename-file tempfile file))
                 (p4-lowlevel-revert file :client vc-p4-client))
               (p4-lowlevel-edit file :client vc-p4-client))
-          (error "File %s already opened for delete." file))
+          (error "File %s already opened for delete" file))
       (p4-lowlevel-add file :client vc-p4-client))))
 
 (defun vc-p4-init-revision ()
-  "Returns `1', the default initial version for Perforce files."
+  "Return `1', the default initial version for Perforce files."
   "1")
 
 (defun vc-p4-responsible-p (file)
-  "Returns true if FILE refers to a file or directory that is
-administered by Perforce."
+  "Return non-nil if FILE is administered by Perforce.
+FILE can point to either a file or a directory."
   (if (and vc-p4-require-p4config
            (getenv "P4CONFIG")
            (not (vc-p4-find-p4config file)))
@@ -290,6 +301,7 @@ administered by Perforce."
                          file)))))
 
 (defun vc-p4-find-version (file rev buffer)
+  "Get the contents of FILE at revision REV and put it into BUFFER."
   (p4-lowlevel-print file
                      :rev rev
                      :output-format buffer
@@ -297,10 +309,10 @@ administered by Perforce."
                      :client vc-p4-client))
 
 (defun vc-p4-checkin (files comment &optional rev)
-  "Check FILES into Perforce.  Error if REV is non-nil.  Check in with
-comment COMMENT."
+  "Check FILES into Perforce.
+Check in with comment COMMENT. Error if REV is non-nil."
   (if rev
-      (error "Can't specify revision for Perforce checkin."))
+      (error "Can't specify revision for Perforce checkin"))
   (let* (;; XXX: default-directory?  this should work for most (all?) cases
          (default-directory (file-name-directory (car files)))
 		 (current-client
@@ -337,8 +349,8 @@ comment COMMENT."
       (dolist (file files)
         (vc-p4-state file nil t)))))
 
-;;; FIXME: this should not have a DESTFILE argument
 (defun vc-p4-checkout (file &optional rev)
+  "Checkout FILE from Perforce, optionally at revision REV."
   (let ((default-directory (file-name-directory file))
         buffer)
     ;; Make sure we've got all the current state of the file
@@ -355,7 +367,8 @@ comment COMMENT."
   (vc-p4-state file nil t))
 
 (defun vc-p4-revert (file contents-done)
-  "Revert FILE in Perforce.  Ignores CONTENTS-DONE."
+  "Revert FILE in Perforce.
+CONTENTS-DONE is ignored."
   (let ((action (vc-file-getprop file 'vc-p4-action)))
     (cond
      ((null action)
@@ -372,7 +385,8 @@ comment COMMENT."
       (vc-p4-state file nil t))))
 
 (defun vc-p4-merge (file rev1 rev2)
-  "Merge changes into Perforce FILE from REV1 to REV2."
+  "Merge together two revisions of FILE.
+REV1 and REV2 are the revisions to merge together."
   (p4-lowlevel-integrate file file
                          :rev1 rev1
                          :rev2 rev2
@@ -386,7 +400,7 @@ comment COMMENT."
     0))
 
 (defun vc-p4-merge-news (file)
-  "Merge new changes from Perforce into FILE."
+  "Get the latest version of FILE from Perforce."
   (p4-lowlevel-sync file :client vc-p4-client)
   (p4-lowlevel-resolve file :client vc-p4-client)
   (vc-resynch-buffer file t t)
@@ -396,18 +410,23 @@ comment COMMENT."
     0))
 
 (defun vc-p4-resolve-select-yours ()
+  "Resolve a file by selecting your version."
   (vc-p4-select-conflict-text (current-buffer) 3))
 
 (defun vc-p4-resolve-select-theirs ()
+  "Resolve a file by selecting their version."
   (vc-p4-select-conflict-text (current-buffer) 2))
 
 (defun vc-p4-resolve-select-original ()
+  "Resolve a file by selecting the original version."
   (vc-p4-select-conflict-text (current-buffer) 1))
 
 (defun vc-p4-steal-lock (file &optional version)
-  "Steal Perforce lock on FILE."
+  "Steal Perforce lock on FILE.
+VERSION can only be the current version used in the workspace,
+otherwise this function will raise an error."
   (if (and version (not (equal version (vc-workfile-version file))))
-      (error "Can't specify version when stealing Perforce lock."))
+      (error "Can't specify version when stealing Perforce lock"))
   ;; Must set default-directory because this is called in a mail send hook and
   ;; thus not with the current buffer set to the file being reopened.
   (let ((default-directory (file-name-directory file))
@@ -416,7 +435,9 @@ comment COMMENT."
     (p4-lowlevel-reopen file :client vc-p4-client)))
 
 (defun vc-p4-print-log (files &optional buffer shortlog revision limit)
-  "Print Perforce log for FILE into *vc* buffer."
+  "Print Perforce log for FILES into BUFFER.
+If SHORTLOG is non-nil print a short version of the log. REVISION
+is ignored. If LIMIT is non-nil only print that many log messages."
   ;; `log-view-mode' needs to have the file name in order to function
   ;; correctly. "p4 logview" does not print it, so we insert it here by
   ;; hand.
@@ -443,8 +464,7 @@ comment COMMENT."
       (insert "File:        " (file-name-nondirectory file) "\n"))))
 
 (defun vc-p4-show-log-entry (version)
-  "Make sure Perforce log entry for VERSION is displayed in the
-current buffer."
+  "Make sure Perforce log entry for VERSION is displayed in the current buffer."
   (goto-char (point-min))
   (let (start end lines)
     (if (not (search-forward (format "\n#%s " version) nil t)) t
@@ -474,14 +494,14 @@ current buffer."
         (recenter 0))))))
 
 (defun vc-p4-wash-log (file)
-  "Remove all non-comment information from the Perforce log in the
-current buffer."
+  "Remove all non-comment information from the log in the current buffer.
+FILE is ignored."
   (goto-char (point-min))
   (delete-non-matching-lines "^\t"))
 
 (defun vc-p4-update-changelog (&optional files)
-  "Create ChangeLog entriers for FILES if it's non-nil, or for all
-files under the default directory otherwise."
+  "Create ChangeLog entries for the files under ‘default-directory’.
+Limit it to FILES if it’s non-nil"
   (let ((odefault default-directory)
         (changelog (find-change-log))
         default-directory start-rev end-rev)
@@ -541,7 +561,10 @@ files under the default directory otherwise."
                  ("^summary:[ \t]+\\(.+\\)" (1 'log-view-message))))))
 
 (defun vc-p4-diff (file-or-files &optional rev1 rev2 buff _async)
-  "Do a Perforce diff."
+  "Do a Perforce diff of FILE-OR-FILES.
+If REV1 and REV2 are non-nil display the diff of the two
+revisions. If BUFF is non-nil output the diff into it, or use the
+*vc-diff* buffer otherwise. _async is ignored."
   (let* ((buffer (cond
                   ((bufferp buff) buff)
                   ((stringp buff) (get-buffer-create buff))
@@ -671,7 +694,7 @@ Annotate version VERSION if it's specified."
 
 ;;; Adapted from p4.el
 (defun vc-p4-read-output (buffer)
-  "Reads first line of BUFFER and returns it.
+  "Read the first line of BUFFER and return it.
 Read lines are deleted from buffer."
   (save-excursion
     (set-buffer buffer)
@@ -688,8 +711,8 @@ Read lines are deleted from buffer."
 
 ;;; Adapted from p4.el
 (defun vc-p4-annotate-command-internal (file buffer &optional version)
-  "Execute \"hg annotate\" on FILE, inserting the contents in BUFFER.
-Optional arg VERSION is a version to annotate from."
+  "Execute \"p4 annotate\" on FILE, inserting the contents in BUFFER.
+Optional argument VERSION is a version to annotate from."
   ;; XXX maybe not needed, but just in case.
   (vc-setup-buffer buffer)
   ;;   (with-current-buffer buffer
@@ -728,7 +751,7 @@ Optional arg VERSION is a version to annotate from."
       (save-excursion
         ;; (set-buffer buffer)
         (if (> (count-lines (point-min) (point-max)) 1)
-            (error "File pattern maps to more than one file."))))
+            (error "File pattern maps to more than one file"))))
     ;; get the file change history:
     ;;(p4-exec-p4 buffer (list "filelog" "-i" file-spec) t)
     (with-temp-buffer
@@ -895,9 +918,9 @@ Optional arg VERSION is a version to annotate from."
           "[[:space:]]+\\([[:digit:]]+\\) "))
 
 (defun vc-p4-annotate-time ()
-  "Returns the time of the next Perforce annotation at or after point,
-as a floating point fractional number of days.
-Moves the point to the end of the annotation."
+  "Return the time of the next Perforce annotation at or after point.
+The value is returned as a floating point fractional number of
+days. Moves the point to the end of the annotation."
   (when (and (looking-at vc-p4-annotate-re) (fboundp 'vc-annotate-convert-time))
     (goto-char (match-end 0))
     (let ((timestr (match-string-no-properties 1)))
@@ -909,6 +932,7 @@ Moves the point to the end of the annotation."
                     (string-to-number (match-string 1 timestr)))))))
 
 (defun vc-p4-annotate-extract-revision-at-line ()
+  "Get the annotated revision on the current line."
   (save-excursion
     (beginning-of-line)
     (if (looking-at vc-p4-annotate-re) (match-string-no-properties 3))))
@@ -934,7 +958,7 @@ If DIRNAME is not specified, uses `default-directory'."
                                 (directory-file-name this-directory))))))))
 
 (defun vc-p4-is-in-client (file)
-  "Return true if FILE is inside the p4 client hierarchy."
+  "Return non-nil if FILE is inside the p4 client hierarchy."
   (let* ((default-directory (file-name-directory file))
          (info (p4-lowlevel-info :client vc-p4-client))
          (root (alist-get "Client root" info nil nil #'string=))
@@ -950,7 +974,7 @@ buffer, then that buffer is searched.
   Returns nil if there are no conflicts.  If there are conflicts,
 returns a list of buffer positions containing the start and end of the
 first conflict block in the file and then the start and end of each
-subblock within it."
+sub-block within it."
   (let ((buffer (if (bufferp file) file (get-file-buffer file)))
         block-start block-end block1-start block1-end block2-start block2-end
         block3-start block3-end)
@@ -990,7 +1014,7 @@ subblock within it."
 (defun vc-p4-select-conflict-text (buffer which)
   "Search for P4 conflict markers in BUFFER and select the WHICH text of each.
 WHICH should be either 1, 2, or 3 to indicate the first, second or
-third subblock in each conflict block."
+third sub-block in each conflict block."
   (let (block-list block-start block-end sub-start sub-end sublist subcount
                    replacement)
     (save-excursion
@@ -1012,8 +1036,11 @@ third subblock in each conflict block."
     (if block-start t nil)))
 
 (defun vc-p4-command (buffer okstatus file &rest flags)
-  "A wrapper around `vc-do-command' for use in vc-p4.el.
-The difference to vc-do-command is that this function always invokes `p4'."
+  "A wrapper around ‘vc-do-command’ for use in vc-p4.el.
+The difference to ‘vc-do-command’ is that this function always
+invokes ‘p4’. The arguments BUFFER, OKSTATUS, FILE, and FLAGS are
+all passed directly to ‘vc-do-command’, so check the
+documentation for that command for their meanings."
   (apply 'vc-do-command buffer okstatus "p4" file flags))
 
 (defun vc-p4-delete-file (file)
@@ -1021,6 +1048,7 @@ The difference to vc-do-command is that this function always invokes `p4'."
   (p4-lowlevel-delete file :client vc-p4-client))
 
 (defun vc-p4-switch-client (client)
+  "Switch to CLIENT as the current client used for all operations."
   (interactive
    (list (completing-read "Client: " (p4-lowlevel-local-clients))))
   (p4-lowlevel-command-or-error `("set" ,(format "P4CLIENT=%s" client))))
@@ -1035,6 +1063,7 @@ The difference to vc-do-command is that this function always invokes `p4'."
   (p4-lowlevel-login :status t))
 
 (defun vc-p4-dir-extra-headers (dir)
+  "Get extra Perforce-specific vc-dir headers related to DIR."
   (let ((extra-info (p4-lowlevel-info :client vc-p4-client)))
     (concat
      (propertize "Client     :" 'face 'font-lock-type-face)
@@ -1062,3 +1091,4 @@ The difference to vc-do-command is that this function always invokes `p4'."
   (p4-lowlevel-rename old new))
 
 (provide 'vc-p4)
+;;; vc-p4.el ends here

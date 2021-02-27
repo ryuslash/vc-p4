@@ -54,13 +54,15 @@
 
 (defcustom p4-lowlevel-command-messages nil
   "*If non-nil, display run messages from P4 commands.
-If vc-command-messages is bound and non-nil, it does the same thing."
+If ‘vc-command-messages’ is bound and non-nil, it does the same
+thing."
   :type 'boolean
   :group 'p4-lowlevel)
 
 (defcustom p4-lowlevel-ignore-error-list '("file(s) up-to-date")
-  "*A list of Perforce errors to ignore.  Note that each item in the list can be
-a portion of the error string you wish to ignore."
+  "*A list of Perforce errors to ignore.
+Note that each item in the list can be a portion of the error
+string you wish to ignore."
   :type '(repeat (string :tag "Error to Ignore"))
   :group 'p4-lowlevel)
 
@@ -72,8 +74,9 @@ a portion of the error string you wish to ignore."
   'p4-error)
 
 (defun p4-lowlevel-locate-p4 ()
-  "Attempts to locate the p4 command.  Used by `vc-p4-registered' to
-avoid an error on systems on which the Perforce client is not installed."
+  "Attempts to locate the p4 command.
+Used by `vc-p4-registered' to avoid an error on systems on which
+the Perforce client is not installed."
   (if (and (boundp 'exec-suffixes) (fboundp 'file-executable-p))
 	  (locate-file p4-lowlevel-p4-program exec-path exec-suffixes 'file-executable-p) ; GNU Emacs
 	(locate-file p4-lowlevel-p4-program exec-path '("" ".btm" ".bat" ".cmd" ".exe" ".com") 'executable))) ; XEmacs
@@ -150,15 +153,16 @@ Returns the buffer containing the program output."
       output-buffer)))
 
 (defun p4-lowlevel-buffer-to-alist (&optional buffer)
-  "Converts the current buffer containing p4 output to an alist.  If
-optional argument BUFFER is non-nil, converts that buffer instead.
-The returned alist contains one element for each `unit' in the buffer.
-A `unit' is either a line containing a tag (`info:' or `info#:',
-`error:', `exit:', etc.) or a block of untagged text.  The car of each
-element is the tag for the line (i.e., the string to the left of the
-colon, or `text' for text units), and the cdr is the value for the
-line (i.e., everything after the first `: ' sequence) or the entire
-block of untagged text (including newlines other than the last one).
+  "Convert the current buffer containing p4 output to an alist.
+If optional argument BUFFER is non-nil, converts that buffer
+instead. The returned alist contains one element for each `unit'
+in the buffer. A `unit' is either a line containing a
+tag (`info:' or `info#:', `error:', `exit:', etc.) or a block of
+text with no tag. The car of each element is the tag for the
+line (i.e., the string to the left of the colon, or `text' for
+text units), and the cdr is the value for the line (i.e.,
+everything after the first `: ' sequence) or the entire block of
+text without a tag (including newlines other than the last one).
 The alist is in the same order as the contents of the buffer."
   (save-excursion
     (if buffer (set-buffer buffer))
@@ -187,12 +191,13 @@ The alist is in the same order as the contents of the buffer."
       (nreverse alist))))
 
 (defun p4-lowlevel-command-to-alist (args &optional input)
-  "Calls `p4-lowlevel-command-to-buffer' and then
-`p4-lowlevel-buffer-to-alist'.  Passes ARGS and optional INPUT to
-`p4-lowlevel-command-to-buffer'.  Hands the resulting buffer to
-`p4-lowlevel-buffer-to-alist' for parsing.  Kills the output buffer
-when it has been parsed.  Returns the resulting alist on success, or
-the return value of `p4-lowlevel-command-to-buffer' on failure."
+  "Call `p4-lowlevel-command-to-buffer' and then `p4-lowlevel-buffer-to-alist'.
+Passes ARGS and optional INPUT to
+`p4-lowlevel-command-to-buffer'. Hands the resulting buffer to
+`p4-lowlevel-buffer-to-alist' for parsing. Kills the output
+buffer when it has been parsed. Returns the resulting alist on
+success, or the return value of `p4-lowlevel-command-to-buffer'
+on failure."
   (let ((output-buffer (p4-lowlevel-command-to-buffer args input))
         return-value)
     (setq return-value (p4-lowlevel-buffer-to-alist output-buffer))
@@ -241,16 +246,17 @@ value of 0."
 		  t)))))
 
 (defun p4-lowlevel-items-matching-tag (tag output)
-  "Returns a list of the items maching TAG in p4 OUTPUT, or nil if none.
+  "Return a list of the items matching TAG in p4 OUTPUT, or nil if none.
 OUTPUT may be a buffer or alist."
   (if (bufferp output)
       (setq output (p4-lowlevel-buffer-to-alist output)))
   (mapcar (lambda (pair) (cdr pair)) (p4-lowlevel-re-assoc tag output)))
 
 (defun p4-lowlevel-lines-matching-tag (tag output)
-  "Returns a string containing the lines matching TAG in p4 OUTPUT, or
-nil if none.  OUTPUT may be a buffer or alist.  The lines are
-terminated by newlines.  The tags are not included in the string."
+  "Return a string containing the lines matching TAG in p4 OUTPUT.
+Return nil if none of the lines match TAG. OUTPUT may be a buffer
+or alist. The lines are terminated by newlines. The tags are not
+included in the string."
   (if (bufferp output)
       (setq output (p4-lowlevel-buffer-to-alist output)))
   (let* ((alist (p4-lowlevel-re-assoc tag output))
@@ -263,8 +269,8 @@ terminated by newlines.  The tags are not included in the string."
       lines)))
 
 (defun p4-lowlevel-errors (output)
-  "Returns a string containing the errors in p4 OUTPUT, or nil if none.
-OUTPUT may be a buffer or alist.  The error lines are separated by
+  "Return a string containing the errors in p4 OUTPUT, or nil if none.
+OUTPUT may be a buffer or alist. The error lines are separated by
 newlines, but there is no ending newline on the string."
   (let ((errors (p4-lowlevel-lines-matching-tag "^error" output)))
     (if errors
@@ -272,26 +278,26 @@ newlines, but there is no ending newline on the string."
       nil)))
 
 (defun p4-lowlevel-info-lines (output)
-  "Returns a string containing the info in p4 OUTPUT, or nil if none.
-OUTPUT may be a buffer or alist.  The info lines are terminated by
+  "Return a string containing the info in p4 OUTPUT, or nil if none.
+OUTPUT may be a buffer or alist. The info lines are terminated by
 newlines."
   (p4-lowlevel-lines-matching-tag "^info" output))
 
 (defun p4-lowlevel-text (output)
-  "Returns a string containing the text in p4 OUTPUT, or nil if none.
-OUTPUT may be a buffer or alist.  The text lines are terminated by
+  "Return a string containing the text in p4 OUTPUT, or nil if none.
+OUTPUT may be a buffer or alist. The text lines are terminated by
 newlines."
   (p4-lowlevel-lines-matching-tag "^text" output))
 
 (defun p4-lowlevel-command-or-error (args &optional input output-format noerror)
-  "Executes p4 command specified by ARGS and returns output or signals error.
-Pass optional argument INPUT to `p4-lowlevel-command-to-buffer'.  If optional
-argument OUTPUT-FORMAT is \'string, return a string containing the
-output (including tags).  If it is \'buffer, return the temporary
-buffer containing the output.  If it is a buffer, put output in that
-buffer and return it.  If it is anything else, return an alist of the
-output.  If optional fourth argument NOERROR is true, then returns nil
-rather than raising an error."
+  "Execute p4 command specified by ARGS and return output or signal error.
+Pass optional argument INPUT to `p4-lowlevel-command-to-buffer'.
+If optional argument OUTPUT-FORMAT is \'string, return a string
+containing the output (including tags). If it is \'buffer, return
+the temporary buffer containing the output. If it is a buffer,
+put output in that buffer and return it. If it is anything else,
+return an alist of the output. If optional fourth argument
+NOERROR is true, then returns nil rather than raising an error."
   (let* (errors error-buffer return-value
                 (output-buffer (p4-lowlevel-command-to-buffer args input
                                                               (if (bufferp output-format)
@@ -327,11 +333,12 @@ rather than raising an error."
     return-value))
 
 (defun p4-lowlevel-command-into-buffer (args buffer)
-  "Executes p4 command specified by ARGS, raising errors when necessary.
-If BUFFER is a string, then puts output in buffer whose name is formed
-by concatenating ` *p4-lowevel-', BUFFER-NAME, and `*' (e.g., if BUFFER is
-`diff', then output goes in buffer ` *p4-lowevel-diff*').  If BUFFER is a
-buffer, then puts output in that buffer.  Returns the buffer."
+  "Execute p4 command specified by ARGS, raising errors when necessary.
+If BUFFER is a string, then puts output in buffer whose name is
+formed by concatenating ` *p4-lowevel-', BUFFER-NAME, and
+`*' (e.g., if BUFFER is `diff', then output goes in buffer `
+*p4-lowevel-diff*'). If BUFFER is a buffer, then puts output in
+that buffer. Returns the buffer."
   (let* ((output-alist (p4-lowlevel-command-or-error args))
          (output-buffer (if (bufferp buffer) buffer
                           (p4-lowlevel-get-buffer-create
@@ -344,15 +351,14 @@ buffer, then puts output in that buffer.  Returns the buffer."
       output-buffer)))
 
 (defun p4-lowlevel-command-messages ()
-  "Return t if p4-lowlevel-command-messages or vc-command-messages is
-bound and true."
+  "Return t if ‘vc-command-messages’ bound and true.
+Fall back to the value of ‘p4-lowlevel-command-messages’."
   (if (and (boundp 'vc-command-messages) vc-command-messages)
       t
     p4-lowlevel-command-messages))
 
 (defun p4-lowlevel-canonicalize-revision (rev)
-  "Turn REV into a form which can be concatenated to file names in P4
-commands."
+  "Turn REV into a form which can be concatenated to file names in P4 commands."
   ;; There is some ambiguity here, since a number can be either a revision
   ;; number (#rev) or a change number (@change). We assume that a bare number is
   ;; a revision number.
@@ -376,7 +382,8 @@ commands."
 
 (cl-defun p4-lowlevel-add (file &key client)
   "Tell Perforce to add FILE to the repository.
-Returns nil or raises an error on failure."
+Returns nil or raises an error on failure. If CLIENT is non-nil
+it is passed along as the Perforce client to use."
   (let* ((client-args (if client (list "-c" client)))
          (args (append client-args (list "add" file))))
    ;; Note that because "p4 -s add" has bugs, at least as of p4 99.2, this won't
@@ -385,8 +392,9 @@ Returns nil or raises an error on failure."
    (p4-lowlevel-command-or-error args)))
 
 (cl-defun p4-lowlevel-delete (file &key client)
-  "Tell Perforce to delet FILE from the repository.
-Returns nil or raises an error on failure."
+  "Tell Perforce to delete FILE from the repository.
+Returns nil or raises an error on failure. If CLIENT is non-nil
+it is passed on as the Perforce client to use."
   (let* ((client-args (if client (list "-c" client)))
          (args (append client-args (list "delete" file))))
    (p4-lowlevel-command-or-error args)))
@@ -401,14 +409,15 @@ Returns nil or raises an error on failure."
 ;; DO need to support specified changelist #'s.
 
 (cl-defun p4-lowlevel-change (&key buffer op client)
-  "Creates or edits a P4 changelist from/to BUFFER.
+  "Create or edit a P4 changelist from/to BUFFER.
 If optional OP is a number, then the corresponding changelist is
-retrieved into BUFFER, or into a new buffer if BUFFER is nil.  If OP
-is non-nil and not a number, then then BUFFER should contain an
-existing changelist which is saved to the database; the number of the
-new or updated changelist is returned.  If OP is nil then a new
-changelist is retrieved into BUFFER (or a new buffer).  The output
-buffer is returned."
+retrieved into BUFFER, or into a new buffer if BUFFER is nil. If
+OP is non-nil and not a number, then then BUFFER should contain
+an existing changelist which is saved to the database; the number
+of the new or updated changelist is returned. If OP is nil then a
+new changelist is retrieved into BUFFER (or a new buffer). The
+output buffer is returned. If CLIENT is non-nil it is passed on
+as the Perforce client to use."
   (let* ((input-buffer (if (and op (not (numberp op))) buffer nil))
          (flag-arg (if (or (not op) (numberp op)) "-o" "-i"))
          (number-arg (if (numberp op) (list (number-to-string op))))
@@ -432,11 +441,14 @@ buffer is returned."
 
 (cl-defun p4-lowlevel-changes
     (file-pattern &key output-format rev1 rev2 i-flag l-flag m-val s-val client)
-  "Call `p4 changes' on FILE-PATTERN.  Optional OUTPUT-FORMAT is as
-described in `p4-lowlevel-command-or-error'.  Optionally, limit output
-to the revisions between REV1 and REV2.  If I-FLAG is non-nil, pass
-`-i'; if L-FLAG is non-nil, pass `-l'; if M-VAL is non-nil, pass that
-value with `-m'; if S-VAL is non-nil, pass that value with `-s'."
+  "Call “p4 changes” command on FILE-PATTERN.
+Optional OUTPUT-FORMAT is as described in
+`p4-lowlevel-command-or-error'. Optionally, limit output to the
+revisions between REV1 and REV2. If I-FLAG is non-nil, pass `-i';
+if L-FLAG is non-nil, pass `-l'; if M-VAL is non-nil, pass that
+value with `-m'; if S-VAL is non-nil, pass that value with `-s'.
+If CLIENT is non-nil it is passed on as the Perforce client to
+use."
   (setq rev1 (p4-lowlevel-canonicalize-revision rev1)
         rev2 (p4-lowlevel-canonicalize-revision rev2))
   (let ((full-file
@@ -468,12 +480,14 @@ value with `-m'; if S-VAL is non-nil, pass that value with `-s'."
 ;; Do NOT need to support diffing multiple files.
 
 (cl-defun p4-lowlevel-diff (files &key rev buffer client)
-  "Run `p4 diff' on FILE at revision REV and return a buffer
-containing the results.  REV is in the syntax described by `p4 help
-revisions'.  If REV is nil, compare the client's sync'd revision to
-the file on disk.  Uses `p4-lowlevel-diff-switches' to determine flags
-to pass to `p4 diff'.  If optional BUFFER is non-nil, put output in
-that buffer."
+  "Run `p4 diff' on FILES at revision REV.
+Return a buffer containing the results. REV is in the syntax
+described by `p4 help revisions'. If REV is nil, compare the
+client's synced revision to the file on disk. Uses
+`p4-lowlevel-diff-switches' to determine flags to pass to `p4
+diff'. If optional BUFFER is non-nil, put output in that buffer.
+If CLIENT is non-nil it is passed on as the Perforce client to
+use."
   (unless (listp files)
     (setq files (list files)))
   (setq rev (p4-lowlevel-canonicalize-revision rev))
@@ -494,8 +508,9 @@ that buffer."
     buffer))
 
 (cl-defun p4-lowlevel-diff-s (file flag &key client)
-  "Run `p4 diff -s' on FILE, using FLAG as the argument to `-s', and
-return a list of the matching files."
+  "Run `p4 diff -s' on FILE, using FLAG as the argument to `-s'.
+Return a list of the matching files. If CLIENT is non-nil it’s
+passed on as the Perforce client to use."
   (p4-lowlevel-items-matching-tag
    "^info"
    (let* ((client-args (if client (list "-c" client)))
@@ -511,11 +526,13 @@ return a list of the matching files."
 ;; Do NOT need to support "-b".
 
 (cl-defun p4-lowlevel-diff2 (file1 file2 &key rev1 rev2 buffer client)
-  "Run `p4 diff2' on FILE and FILE2 and return a buffer containing the
-results.  If optional REV1 and/or REV2 are non-nil, they specify the
-revisions to diff in the syntax described by `p4 help revisions'.  If
-optional BUFFER is non-nil, output goes in that buffer.  Uses
-`p4-lowlevel-diff-switches' to determine flags to pass to `p4 diff2'."
+  "Run `p4 diff2' on FILE1 and FILE2 and return a buffer containing the results.
+If optional REV1 and/or REV2 are non-nil, they specify the
+revisions to diff in the syntax described by `p4 help revisions'.
+If optional BUFFER is non-nil, output goes in that buffer. Uses
+`p4-lowlevel-diff-switches' to determine flags to pass to `p4
+diff2'. If CLIENT is non-nil it’s passed on as the Perforce
+client to use."
   (setq rev1 (p4-lowlevel-canonicalize-revision rev1)
         rev2 (p4-lowlevel-canonicalize-revision rev2))
   (let* ((file1-spec (if rev1 (concat file1 rev1) file1))
@@ -536,7 +553,9 @@ optional BUFFER is non-nil, output goes in that buffer.  Uses
 
 (cl-defun p4-lowlevel-edit (file &key client)
   "Tell Perforce we want to edit FILE.
-Returns non-nil on success or nil on failure (or raises an error)."
+Returns non-nil on success or nil on failure (or raises an
+error). If CLIENT is non-nil it’s passed on as the Perforce
+client to use."
   (let* ((client-args (if client (list "-c" client)))
          (args (append client-args (list "edit" file))))
     (p4-lowlevel-command-or-error args)))
@@ -551,11 +570,12 @@ Returns non-nil on success or nil on failure (or raises an error)."
 
 (cl-defun p4-lowlevel-filelog (file &key buffer long follow-branches limit client)
   "Fetch the p4 log of FILE and return a buffer containing it.
-If optional BUFFER is non-nil, put output in that buffer.  If optional
-LONG is non-nil, return long output (i.e., pass the `-l' flag).  If
-optional FOLLOW-BRANCHES is non-nil, include pre-branch log entries in
-output (i.e., pass the `-i' flag).  If LIMIT is non-nil, get only the
-last LIMIT log entries."
+If optional BUFFER is non-nil, put output in that buffer. If
+optional LONG is non-nil, return long output (i.e., pass the `-l'
+flag). If optional FOLLOW-BRANCHES is non-nil, include pre-branch
+log entries in output (i.e., pass the `-i' flag). If LIMIT is
+non-nil, get only the last LIMIT log entries. If CLIENT is
+non-nil it will be passed on as the Perforce client to use."
   (let* ((long-flag (if long (list "-l")))
          (branch-flag (if follow-branches (list "-i")))
          (limit-flag (if limit (list "-m" (number-to-string limit))))
@@ -564,7 +584,9 @@ last LIMIT log entries."
     (p4-lowlevel-command-into-buffer args (or buffer "log"))))
 
 (cl-defun p4-lowlevel-opened (file &key client)
-  "Fetch the string returned by running `p4 opened' on FILE."
+  "Fetch the string returned by running `p4 opened' on FILE.
+Optional argument CLIENT is passed on to the p4 command as the
+Perforce client to use for the operation."
   (let* ((client-args (if client (list "-c" client)))
          (args (append client-args (list "opened" file))))
    (p4-lowlevel-command-or-error args nil 'string)))
@@ -577,11 +599,14 @@ last LIMIT log entries."
 
 (cl-defun p4-lowlevel-fstat (file &key rev noerror client)
   "Fetch p4 information about FILE (optionally, at REV).
-REV should be in the syntax described by `p4 help revisions'.  Returns
-a list of field-name/value elements on success, or raises an error on
-failure.  If optional third argument NOERROR is true, then returns nil
-rather than raising an error on failure.  If FILE matches multiple
-files, then returns a list of lists of field-name/value elements."
+REV should be in the syntax described by `p4 help revisions'.
+Returns a list of field-name/value elements on success, or raises
+an error on failure. If optional third argument NOERROR is true,
+then returns nil rather than raising an error on failure. If FILE
+matches multiple files, then returns a list of lists of
+field-name/value elements. Optional argument CLIENT is passed on
+to the p4 command as the Perforce client to use for the
+operation."
   (setq rev (p4-lowlevel-canonicalize-revision rev))
   (let* ((file-spec (if rev (concat file rev) file))
          (client-args (when client (list "-c" client)))
@@ -611,7 +636,9 @@ files, then returns a list of lists of field-name/value elements."
       lists)))
 
 (cl-defun p4-lowlevel-info (&key client)
-  "Return an alist representing the output of `p4 info'."
+  "Return an alist representing the output of `p4 info'.
+Optional argument CLIENT is passed on to the p4 command as the
+Perforce client to use for the operation."
   (let* ((client-args (if client (list "-c" client)))
          (args (append client-args (list "info")))
          (base-alist (p4-lowlevel-command-or-error args nil nil t))
@@ -629,10 +656,13 @@ files, then returns a list of lists of field-name/value elements."
 
 (cl-defun p4-lowlevel-print (file &key rev output-format quiet client)
   "Retrieve the contents of FILE using `p4 print'.
-If optional REV is non-nil, retrieve that revision, which should be in
-the syntax described by `p4 help revisions'.  Optional OUTPUT-FORMAT
-is interpreted as described for `p4-lowlevel-command-or-error'.  If optional
-QUIET is non-nil, then the `-q' flag is passed to `p4 print'."
+If optional REV is non-nil, retrieve that revision, which should
+be in the syntax described by `p4 help revisions'. Optional
+OUTPUT-FORMAT is interpreted as described for
+`p4-lowlevel-command-or-error'. If optional QUIET is non-nil,
+then the `-q' flag is passed to `p4 print'. Optional argument
+CLIENT is passed on to the p4 command as the Perforce client to
+use for the operation."
   (setq rev (p4-lowlevel-canonicalize-revision rev))
   (let* ((fullfile (if rev (concat file rev) file))
          (quiet-args (if quiet (list "-q")))
@@ -650,7 +680,9 @@ QUIET is non-nil, then the `-q' flag is passed to `p4 print'."
 
 (cl-defun p4-lowlevel-reopen (file &key changelist client)
   "Call `p4 reopen' on FILE.
-Optional CHANGELIST specifies the changelist to which to move it."
+Optional CHANGELIST specifies the changelist to which to move it.
+Optional argument CLIENT is passed on to the p4 command as the
+Perforce client to use for the operation."
   (let* ((client-args (if client (list "-c" client)))
          (changelist-args (if changelist (list "-c" changelist)))
          (args (append client-args (list "reopen") changelist-args (list file))))
@@ -670,7 +702,9 @@ Optional CHANGELIST specifies the changelist to which to move it."
 (cl-defun p4-lowlevel-resolve (file &key client)
   "Call `p4 resolve' on FILE.
 Specifies the `-af' and `-t' options to ensure a non-interactive
-resolve.  Raises an error if the command fails."
+resolve. Raises an error if the command fails. Optional argument
+CLIENT is passed on to the p4 command as the Perforce client to
+use for the operation."
   (let* ((client-args (if client (list "-c" client)))
          (args (append client-args (list "resolve" "-af" "-t" file))))
     (p4-lowlevel-command-or-error args)))
@@ -683,7 +717,9 @@ resolve.  Raises an error if the command fails."
 ;; Do NOT need to support the specification of multiple files.
 
 (cl-defun p4-lowlevel-revert (file &key client)
-  "Tell Perforce to unedit FILE."
+  "Tell Perforce to revert FILE.
+Optional argument CLIENT is passed on to the p4 command as the
+Perforce client to use for the operation."
   (let* ((client-args (if client (list "-c" client)))
          (args (append client-args (list "revert" file))))
     (p4-lowlevel-command-or-error args)))
@@ -695,7 +731,9 @@ resolve.  Raises an error if the command fails."
 ;; support "p4 submit -i".
 
 (cl-defun p4-lowlevel-submit (change-spec &key client)
-  "Calls `p4 submit' on CHANGE-SPEC, which should be a string or buffer."
+  "Call `p4 submit' on CHANGE-SPEC, which should be a string or buffer.
+Optional argument CLIENT is passed on to the p4 command as the
+Perforce client to use for the operation."
   (let* ((client-args (if client (list "-c" client)))
          (args (append client-args (list "submit" "-i")))
          buffer)
@@ -719,8 +757,10 @@ resolve.  Raises an error if the command fails."
 
 (cl-defun p4-lowlevel-sync (file &key rev force client)
   "Call `p4 sync' for FILE.
-If optional REV is specified, use that revision specifier.  If
-optional FORCE is non-nil, pass the `-f' flag."
+If optional REV is specified, use that revision specifier. If
+optional FORCE is non-nil, pass the `-f' flag. Optional argument
+CLIENT is passed on to the p4 command as the Perforce client to
+use for the operation."
   (setq rev (p4-lowlevel-canonicalize-revision rev))
   (let* ((fullfile (if rev (concat file rev) file))
          (force-args (if force (list "-f")))
@@ -729,9 +769,11 @@ optional FORCE is non-nil, pass the `-f' flag."
     (p4-lowlevel-command-or-error args)))
 
 (cl-defun p4-lowlevel-integrate (from-file to-file &key rev1 rev2 force client)
-  "Call `p4 integrate' from FROM-FILE to TO-FILE, with optional revision
-range specified by REV1 and REV2, forcing the integration (i.e.,
-specifying `-f' to `p4 integrate' if FORCE is non-nil."
+  "Call `p4 integrate' from FROM-FILE to TO-FILE.
+Optionally a revision range can be specified by REV1 and REV2,
+forcing the integration (i.e., specifying `-f' to `p4 integrate'
+if FORCE is non-nil. Optional argument CLIENT is passed on to the
+p4 command as the Perforce client to use for the operation."
   (setq rev1 (p4-lowlevel-canonicalize-revision rev1)
         rev2 (p4-lowlevel-canonicalize-revision rev2))
   (let* ((force-arg (if force (list "-f")))
@@ -743,10 +785,10 @@ specifying `-f' to `p4 integrate' if FORCE is non-nil."
     (p4-lowlevel-command-or-error args)))
 
 (defun p4-lowlevel-client-version (&optional noerror)
-  "Returns the Perforce client version string from `p4 -V'.
+  "Return the Perforce client version string from `p4 -V'.
 Returns the third field of the last line of output from `p4 -V', or
 signals an error if the invocation failed.  if optional NOERROR is
-non-nil, returns nil instead of signalling an error."
+non-nil, returns nil instead of signaling an error."
   (let ((version-string (p4-lowlevel-command-or-error "-V" nil 'string
                                                       noerror)))
     (if (string-match "\n[^/\n]+/[^/\n]+/\\([^\n/]+\\)/.*\n?\\'"
@@ -755,9 +797,11 @@ non-nil, returns nil instead of signalling an error."
     version-string))
 
 (defun p4-lowlevel-get-buffer-create (name)
-  "Like get-buffer-create, but always changes default-directory of the
-returned buffer to the current default-directory, even if the buffer
-already exists."
+  "A specialization of ‘get-buffer-create’.
+Always change ‘default-directory’ of the returned buffer to the
+current ‘default-directory’, even if the buffer already exists.
+Argument NAME is passed directly to `get-buffer-create', so check
+the documentation for that function to see its purpose."
   (let ((buf (get-buffer-create name))
         (caller-default-directory default-directory))
     (save-excursion
@@ -766,6 +810,7 @@ already exists."
     buf))
 
 (defun p4-lowlevel-local-clients ()
+  "Find the clients that are available on the current host."
   (mapcar (lambda (client) (alist-get "client" client nil nil #'string=))
           (seq-filter (lambda (client) (string= (alist-get "Host" client nil nil #'string=)
                                                 (system-name)))
@@ -779,6 +824,9 @@ already exists."
                 lines nil)))
 
 (defun p4-lowlevel-clients-parse-line (acc line)
+  "Parse a given line for information and store it in ACC.
+ACC is an alist of found keys and their values from the output in
+LINE."
   (pcase (car line)
     ((pred (string= "info1"))
      (let ((values (split-string (cdr line) " ")))
@@ -803,7 +851,7 @@ already exists."
          (_ acc))))
     (`("exit" . ,result)
      (if (not (= result 0))
-         (error "Clients returned non-zero exit code.")))
+         (error "Clients returned non-zero exit code")))
     (_ acc)))
 
 (cl-defun p4-lowlevel-login (&key password status)
@@ -838,3 +886,7 @@ only on the server and not touch the local files."
     (p4-lowlevel-command-or-error args)))
 
 (provide 'p4-lowlevel)
+
+(provide 'p4-lowlevel)
+
+;;; p4-lowlevel.el ends here
