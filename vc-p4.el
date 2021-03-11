@@ -189,10 +189,12 @@ compare non-open files to the depot version."
 _FILES is ignored. The UPDATE-FUNCTION is used to process the
 results of this function."
   ;; XXX: this should be asynchronous.
-  (let ((lists (p4-lowlevel-fstat
-                (format "%s/..." (directory-file-name (expand-file-name dir)))
-                :noerror t
-                :client vc-p4-client)))
+  (let* ((vc-p4-client (with-current-buffer (find-file-noselect dir)
+                    vc-p4-client))
+         (lists (p4-lowlevel-fstat
+                 (format "%s/..." (directory-file-name (expand-file-name dir)))
+                 :noerror t
+                 :client vc-p4-client)))
     (when (stringp (caar lists))
       (setq lists (list lists)))
     (dolist (this-list lists)
