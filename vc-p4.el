@@ -237,7 +237,7 @@ ignored."
 Compared to the default implementation, this function handles the
 special case of a Perforce file that is added but not yet committed."
   (let ((state   (vc-state file))
-        (rev     (vc-workfile-version file)))
+        (rev     (vc-working-revision file)))
     (if (or (not rev) (string= rev "0"))
         (setq rev "@@"))
     (cond ((or (eq state 'up-to-date)
@@ -364,7 +364,7 @@ _CONTENTS-DONE is ignored."
       ;; If Perforce doesn't believe that we edited the file, we have
       ;; to use sync instead of revert.
       (p4-lowlevel-sync file
-                        :rev (vc-workfile-version file)
+                        :rev (vc-working-revision file)
                         :force t))
      (t
       (p4-lowlevel-revert file)))
@@ -412,7 +412,7 @@ REV1 and REV2 are the revisions to merge together."
   "Steal Perforce lock on FILE.
 VERSION can only be the current version used in the workspace,
 otherwise this function will raise an error."
-  (if (and version (not (equal version (vc-workfile-version file))))
+  (if (and version (not (equal version (vc-working-revision file))))
       (error "Can't specify version when stealing Perforce lock"))
   ;; Must set default-directory because this is called in a mail send hook and
   ;; thus not with the current buffer set to the file being reopened.
