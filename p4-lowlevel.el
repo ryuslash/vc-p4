@@ -377,24 +377,18 @@ Fall back to the value of ‘p4-lowlevel-command-messages’."
 ;; Do NOT need to support "-t".
 ;; Do NOT need to support the specification of multiple files.
 
-(cl-defun p4-lowlevel-add (file &key client)
+(cl-defun p4-lowlevel-add (file)
   "Tell Perforce to add FILE to the repository.
-Returns nil or raises an error on failure. If CLIENT is non-nil
-it is passed along as the Perforce client to use."
-  (let* ((client-args (if client (list "-c" client)))
-         (args (append client-args (list "add" file))))
-   ;; Note that because "p4 -s add" has bugs, at least as of p4 99.2, this won't
-   ;; necessarily detect when the add fails, e.g., because of an attempt to add a
-   ;; file which already exists in the repository.
-   (p4-lowlevel-command-or-error args)))
+Returns nil or raises an error on failure."
+  ;; Note that because "p4 -s add" has bugs, at least as of p4 99.2, this won't
+  ;; necessarily detect when the add fails, e.g., because of an attempt to add a
+  ;; file which already exists in the repository.
+  (p4-lowlevel-command-or-error (list "add" file)))
 
-(cl-defun p4-lowlevel-delete (file &key client)
+(cl-defun p4-lowlevel-delete (file)
   "Tell Perforce to delete FILE from the repository.
-Returns nil or raises an error on failure. If CLIENT is non-nil
-it is passed on as the Perforce client to use."
-  (let* ((client-args (if client (list "-c" client)))
-         (args (append client-args (list "delete" file))))
-   (p4-lowlevel-command-or-error args)))
+Returns nil or raises an error on failure."
+  (p4-lowlevel-command-or-error (list "delete" file)))
 
 ;; Here's what we need to support from the "p4 change" command, at least for the
 ;; time being:
@@ -405,7 +399,7 @@ it is passed on as the Perforce client to use."
 ;; DO need to support "-i".
 ;; DO need to support specified changelist #'s.
 
-(cl-defun p4-lowlevel-change (&key buffer op client)
+(cl-defun p4-lowlevel-change (&key buffer op)
   "Create or edit a P4 changelist from/to BUFFER.
 If optional OP is a number, then the corresponding changelist is
 retrieved into BUFFER, or into a new buffer if BUFFER is nil. If
@@ -413,13 +407,11 @@ OP is non-nil and not a number, then then BUFFER should contain
 an existing changelist which is saved to the database; the number
 of the new or updated changelist is returned. If OP is nil then a
 new changelist is retrieved into BUFFER (or a new buffer). The
-output buffer is returned. If CLIENT is non-nil it is passed on
-as the Perforce client to use."
+output buffer is returned."
   (let* ((input-buffer (if (and op (not (numberp op))) buffer nil))
          (flag-arg (if (or (not op) (numberp op)) "-o" "-i"))
          (number-arg (if (numberp op) (list (number-to-string op))))
-         (client-args (if client (list "-c" client)))
-         (args (append client-args (list "change" flag-arg) number-arg))
+         (args (append (list "change" flag-arg) number-arg))
          alist info)
     (setq alist (p4-lowlevel-command-or-error args input-buffer nil))
     (setq info (p4-lowlevel-info-lines alist))
@@ -436,15 +428,13 @@ as the Perforce client to use."
         buffer))))
 
 (cl-defun p4-lowlevel-changes
-    (file-pattern &key output-format rev1 rev2 i-flag l-flag m-val s-val client)
+    (file-pattern &key output-format rev1 rev2 i-flag l-flag m-val s-val)
   "Call “p4 changes” command on FILE-PATTERN.
 Optional OUTPUT-FORMAT is as described in
 `p4-lowlevel-command-or-error'. Optionally, limit output to the
 revisions between REV1 and REV2. If I-FLAG is non-nil, pass `-i';
 if L-FLAG is non-nil, pass `-l'; if M-VAL is non-nil, pass that
-value with `-m'; if S-VAL is non-nil, pass that value with `-s'.
-If CLIENT is non-nil it is passed on as the Perforce client to
-use."
+value with `-m'; if S-VAL is non-nil, pass that value with `-s'."
   (setq rev1 (p4-lowlevel-canonicalize-revision rev1)
         rev2 (p4-lowlevel-canonicalize-revision rev2))
   (let ((full-file
@@ -456,10 +446,8 @@ use."
         (m-list (if m-val (list "-m" (if (numberp m-val)
                                          (number-to-string m-val)
                                        m-val))))
-        (s-list (if s-val (list "-s" s-val)))
-        (client-args (if client (list "-c" client))))
+        (s-list (if s-val (list "-s" s-val))))
     (p4-lowlevel-command-or-error (append
-                                   client-args
                                    (list "changes")
                                    i-list l-list m-list s-list
                                    (list full-file))
@@ -475,15 +463,13 @@ use."
 ;; DO need to support diffing a single file.
 ;; Do NOT need to support diffing multiple files.
 
-(cl-defun p4-lowlevel-diff (files &key rev buffer client)
+(cl-defun p4-lowlevel-diff (files &key rev buffer)
   "Run `p4 diff' on FILES at revision REV.
 Return a buffer containing the results. REV is in the syntax
 described by `p4 help revisions'. If REV is nil, compare the
 client's synced revision to the file on disk. Uses
 `p4-lowlevel-diff-switches' to determine flags to pass to `p4
-diff'. If optional BUFFER is non-nil, put output in that buffer.
-If CLIENT is non-nil it is passed on as the Perforce client to
-use."
+diff'. If optional BUFFER is non-nil, put output in that buffer."
   (unless (listp files)
     (setq files (list files)))
   (setq rev (p4-lowlevel-canonicalize-revision rev))
@@ -496,22 +482,18 @@ use."
   (let* ((file-specs (if rev
                          (mapcar (lambda (file) (concat file rev)) files)
                        files))
-         (client-args (if client (list "-c" client)))
-         (diff-args (append client-args (list "diff") p4-lowlevel-diff-switches
+         (diff-args (append (list "diff") p4-lowlevel-diff-switches
                             (list "-f" "-t") file-specs))
          (buffer (p4-lowlevel-command-into-buffer diff-args
                                                   (or buffer "diff"))))
     buffer))
 
-(cl-defun p4-lowlevel-diff-s (file flag &key client)
+(cl-defun p4-lowlevel-diff-s (file flag)
   "Run `p4 diff -s' on FILE, using FLAG as the argument to `-s'.
-Return a list of the matching files. If CLIENT is non-nil it’s
-passed on as the Perforce client to use."
+Return a list of the matching files."
   (p4-lowlevel-items-matching-tag
    "^info"
-   (let* ((client-args (if client (list "-c" client)))
-          (args (append client-args (list "diff" (format "-s%s" flag) file))))
-    (p4-lowlevel-command-or-error args))))
+   (p4-lowlevel-command-or-error (list "diff" (format "-s%s" flag) file))))
 
 ;; Here's what we need to support from the "p4 diff2" command, at least for the
 ;; time being:
@@ -521,20 +503,18 @@ passed on as the Perforce client to use."
 ;; DO need to support "-t" (in fact, need to specify it all the time).
 ;; Do NOT need to support "-b".
 
-(cl-defun p4-lowlevel-diff2 (file1 file2 &key rev1 rev2 buffer client)
+(cl-defun p4-lowlevel-diff2 (file1 file2 &key rev1 rev2 buffer)
   "Run `p4 diff2' on FILE1 and FILE2 and return a buffer containing the results.
 If optional REV1 and/or REV2 are non-nil, they specify the
 revisions to diff in the syntax described by `p4 help revisions'.
 If optional BUFFER is non-nil, output goes in that buffer. Uses
 `p4-lowlevel-diff-switches' to determine flags to pass to `p4
-diff2'. If CLIENT is non-nil it’s passed on as the Perforce
-client to use."
+diff2'."
   (setq rev1 (p4-lowlevel-canonicalize-revision rev1)
         rev2 (p4-lowlevel-canonicalize-revision rev2))
   (let* ((file1-spec (if rev1 (concat file1 rev1) file1))
          (file2-spec (if rev2 (concat file2 rev2) file2))
-         (client-args (if client (list "-c" client)))
-         (diff-args (append client-args (list "diff2") p4-lowlevel-diff-switches
+         (diff-args (append (list "diff2") p4-lowlevel-diff-switches
                             (list "-t" file1-spec file2-spec)))
          (buffer (p4-lowlevel-command-into-buffer diff-args
                                                   (or buffer "diff"))))
@@ -547,14 +527,11 @@ client to use."
 ;; Do NOT need to support "-t".
 ;; Do NOT need to support the specification of multiple files.
 
-(cl-defun p4-lowlevel-edit (file &key client)
+(cl-defun p4-lowlevel-edit (file)
   "Tell Perforce we want to edit FILE.
 Returns non-nil on success or nil on failure (or raises an
-error). If CLIENT is non-nil it’s passed on as the Perforce
-client to use."
-  (let* ((client-args (if client (list "-c" client)))
-         (args (append client-args (list "edit" file))))
-    (p4-lowlevel-command-or-error args)))
+error)."
+  (p4-lowlevel-command-or-error (list "edit" file)))
 
 ;; Here's what we need to support from the "p4 filelog" command, at least for
 ;; the time being:
@@ -564,28 +541,22 @@ client to use."
 ;; Do NOT need to support "-m".
 ;; Do NOT need to support the specification of multiple files.
 
-(cl-defun p4-lowlevel-filelog (file &key buffer long follow-branches limit client)
+(cl-defun p4-lowlevel-filelog (file &key buffer long follow-branches limit)
   "Fetch the p4 log of FILE and return a buffer containing it.
 If optional BUFFER is non-nil, put output in that buffer. If
 optional LONG is non-nil, return long output (i.e., pass the `-l'
 flag). If optional FOLLOW-BRANCHES is non-nil, include pre-branch
 log entries in output (i.e., pass the `-i' flag). If LIMIT is
-non-nil, get only the last LIMIT log entries. If CLIENT is
-non-nil it will be passed on as the Perforce client to use."
+non-nil, get only the last LIMIT log entries."
   (let* ((long-flag (if long (list "-l")))
          (branch-flag (if follow-branches (list "-i")))
          (limit-flag (if limit (list "-m" (number-to-string limit))))
-         (client-args (if client (list "-c" client)))
-         (args (append client-args (list "filelog") long-flag branch-flag limit-flag (list file))))
+         (args (append (list "filelog") long-flag branch-flag limit-flag (list file))))
     (p4-lowlevel-command-into-buffer args (or buffer "log"))))
 
-(cl-defun p4-lowlevel-opened (file &key client)
-  "Fetch the string returned by running `p4 opened' on FILE.
-Optional argument CLIENT is passed on to the p4 command as the
-Perforce client to use for the operation."
-  (let* ((client-args (if client (list "-c" client)))
-         (args (append client-args (list "opened" file))))
-   (p4-lowlevel-command-or-error args nil 'string)))
+(cl-defun p4-lowlevel-opened (file)
+  "Fetch the string returned by running `p4 opened' on FILE."
+  (p4-lowlevel-command-or-error (list "opened" file) nil 'string))
 
 ;; Here's what we need to support from the "p4 fstat" command, at least for the
 ;; time being:
@@ -593,20 +564,17 @@ Perforce client to use for the operation."
 ;; Do NOT need to support any command-line switches.
 ;; Do NOT need to support the specification of multiple files.
 
-(cl-defun p4-lowlevel-fstat (file &key rev noerror client)
+(cl-defun p4-lowlevel-fstat (file &key rev noerror)
   "Fetch p4 information about FILE (optionally, at REV).
 REV should be in the syntax described by `p4 help revisions'.
 Returns a list of field-name/value elements on success, or raises
 an error on failure. If optional third argument NOERROR is true,
 then returns nil rather than raising an error on failure. If FILE
 matches multiple files, then returns a list of lists of
-field-name/value elements. Optional argument CLIENT is passed on
-to the p4 command as the Perforce client to use for the
-operation."
+field-name/value elements."
   (setq rev (p4-lowlevel-canonicalize-revision rev))
   (let* ((file-spec (if rev (concat file rev) file))
-         (client-args (when client (list "-c" client)))
-         (args (append client-args (list "fstat" file-spec)))
+         (args (list "fstat" file-spec))
          (alist (p4-lowlevel-re-assoc
                  "^info" (p4-lowlevel-command-or-error args nil nil noerror)))
          element line field value values lists)
@@ -631,13 +599,9 @@ operation."
         (car lists)
       lists)))
 
-(cl-defun p4-lowlevel-info (&key client)
-  "Return an alist representing the output of `p4 info'.
-Optional argument CLIENT is passed on to the p4 command as the
-Perforce client to use for the operation."
-  (let* ((client-args (if client (list "-c" client)))
-         (args (append client-args (list "info")))
-         (base-alist (p4-lowlevel-command-or-error args nil nil t))
+(cl-defun p4-lowlevel-info ()
+  "Return an alist representing the output of `p4 info'."
+  (let* ((base-alist (p4-lowlevel-command-or-error (list "info") nil nil t))
          (info-elements (p4-lowlevel-re-assoc "^info" base-alist))
          line tag value info-alist element)
     (while info-elements
@@ -650,20 +614,17 @@ Perforce client to use for the operation."
                 info-alist (cons (cons tag value) info-alist))))
     (nreverse info-alist)))
 
-(cl-defun p4-lowlevel-print (file &key rev output-format quiet client)
+(cl-defun p4-lowlevel-print (file &key rev output-format quiet)
   "Retrieve the contents of FILE using `p4 print'.
 If optional REV is non-nil, retrieve that revision, which should
 be in the syntax described by `p4 help revisions'. Optional
 OUTPUT-FORMAT is interpreted as described for
 `p4-lowlevel-command-or-error'. If optional QUIET is non-nil,
-then the `-q' flag is passed to `p4 print'. Optional argument
-CLIENT is passed on to the p4 command as the Perforce client to
-use for the operation."
+then the `-q' flag is passed to `p4 print'."
   (setq rev (p4-lowlevel-canonicalize-revision rev))
   (let* ((fullfile (if rev (concat file rev) file))
          (quiet-args (if quiet (list "-q")))
-         (client-args (if client (list "-c" client)))
-         (args (append client-args (list "print") quiet-args (list fullfile))))
+         (args (append (list "print") quiet-args (list fullfile))))
     (p4-lowlevel-command-or-error args nil output-format)))
 
 ;; Here's what we need to support from the "p4 reopen" command, at least for the
@@ -674,14 +635,11 @@ use for the operation."
 ;; Do NOT need to support "-t".
 ;; Do NOT need to support the specification of multiple files.
 
-(cl-defun p4-lowlevel-reopen (file &key changelist client)
+(cl-defun p4-lowlevel-reopen (file &key changelist)
   "Call `p4 reopen' on FILE.
-Optional CHANGELIST specifies the changelist to which to move it.
-Optional argument CLIENT is passed on to the p4 command as the
-Perforce client to use for the operation."
-  (let* ((client-args (if client (list "-c" client)))
-         (changelist-args (if changelist (list "-c" changelist)))
-         (args (append client-args (list "reopen") changelist-args (list file))))
+Optional CHANGELIST specifies the changelist to which to move it."
+  (let* ((changelist-args (if changelist (list "-c" changelist)))
+         (args (append (list "reopen") changelist-args (list file))))
    (p4-lowlevel-command-or-error args)))
 
 ;; Here's what we need to support from the "p4 resolve" command, at least for
@@ -695,15 +653,11 @@ Perforce client to use for the operation."
 ;; Do NOT need to support "-v".
 ;; Do NOT need to support the specification of multiple files.
 
-(cl-defun p4-lowlevel-resolve (file &key client)
+(cl-defun p4-lowlevel-resolve (file)
   "Call `p4 resolve' on FILE.
 Specifies the `-af' and `-t' options to ensure a non-interactive
-resolve. Raises an error if the command fails. Optional argument
-CLIENT is passed on to the p4 command as the Perforce client to
-use for the operation."
-  (let* ((client-args (if client (list "-c" client)))
-         (args (append client-args (list "resolve" "-af" "-t" file))))
-    (p4-lowlevel-command-or-error args)))
+resolve. Raises an error if the command fails."
+  (p4-lowlevel-command-or-error (list "resolve" "-af" "-t" file)))
 
 ;; Here's what we need to support from the "p4 revert" command, at least for the
 ;; time being:
@@ -712,13 +666,9 @@ use for the operation."
 ;; Do NOT need to support "-c".
 ;; Do NOT need to support the specification of multiple files.
 
-(cl-defun p4-lowlevel-revert (file &key client)
-  "Tell Perforce to revert FILE.
-Optional argument CLIENT is passed on to the p4 command as the
-Perforce client to use for the operation."
-  (let* ((client-args (if client (list "-c" client)))
-         (args (append client-args (list "revert" file))))
-    (p4-lowlevel-command-or-error args)))
+(cl-defun p4-lowlevel-revert (file)
+  "Tell Perforce to revert FILE."
+  (p4-lowlevel-command-or-error (list "revert" file)))
 
 ;; Here's what we need to support from the "p4 submit" command, at least for the
 ;; time being:
@@ -726,13 +676,9 @@ Perforce client to use for the operation."
 ;; Only need to support non-interactive use; therefore, only need to
 ;; support "p4 submit -i".
 
-(cl-defun p4-lowlevel-submit (change-spec &key client)
-  "Call `p4 submit' on CHANGE-SPEC, which should be a string or buffer.
-Optional argument CLIENT is passed on to the p4 command as the
-Perforce client to use for the operation."
-  (let* ((client-args (if client (list "-c" client)))
-         (args (append client-args (list "submit" "-i")))
-         buffer)
+(cl-defun p4-lowlevel-submit (change-spec)
+  "Call `p4 submit' on CHANGE-SPEC, which should be a string or buffer."
+  (let (buffer)
     (if (bufferp change-spec)
         (setq buffer change-spec)
       (setq buffer (p4-lowlevel-get-buffer-create
@@ -740,7 +686,7 @@ Perforce client to use for the operation."
       (with-current-buffer buffer
         (erase-buffer)
         (insert change-spec)))
-    (p4-lowlevel-command-or-error args buffer)))
+    (p4-lowlevel-command-or-error (list "submit" "-i") buffer)))
 
 ;; Here's what we need to support from the "p4 sync" command, at least for the
 ;; time being:
@@ -750,33 +696,28 @@ Perforce client to use for the operation."
 ;; DO need to support the specification of a file revision.
 ;; Do NOT need to support the specification of multiple files.
 
-(cl-defun p4-lowlevel-sync (file &key rev force client)
+(cl-defun p4-lowlevel-sync (file &key rev force)
   "Call `p4 sync' for FILE.
 If optional REV is specified, use that revision specifier. If
-optional FORCE is non-nil, pass the `-f' flag. Optional argument
-CLIENT is passed on to the p4 command as the Perforce client to
-use for the operation."
+optional FORCE is non-nil, pass the `-f' flag. "
   (setq rev (p4-lowlevel-canonicalize-revision rev))
   (let* ((fullfile (if rev (concat file rev) file))
          (force-args (if force (list "-f")))
-         (client-args (if client (list "-c" client)))
-         (args (append client-args (list "sync") force-args (list fullfile))))
+         (args (append (list "sync") force-args (list fullfile))))
     (p4-lowlevel-command-or-error args)))
 
-(cl-defun p4-lowlevel-integrate (from-file to-file &key rev1 rev2 force client)
+(cl-defun p4-lowlevel-integrate (from-file to-file &key rev1 rev2 force)
   "Call `p4 integrate' from FROM-FILE to TO-FILE.
 Optionally a revision range can be specified by REV1 and REV2,
 forcing the integration (i.e., specifying `-f' to `p4 integrate'
-if FORCE is non-nil. Optional argument CLIENT is passed on to the
-p4 command as the Perforce client to use for the operation."
+if FORCE is non-nil."
   (setq rev1 (p4-lowlevel-canonicalize-revision rev1)
         rev2 (p4-lowlevel-canonicalize-revision rev2))
   (let* ((force-arg (if force (list "-f")))
          (from-full (if (or rev1 rev2)
                         (format "%s%s,%s" from-file (or rev1 "") (or rev2 ""))
                       from-file))
-         (client-args (if client (list "-c" client)))
-         (args (append client-args (list "integrate") force-arg (list from-full to-file))))
+         (args (append (list "integrate") force-arg (list from-full to-file))))
     (p4-lowlevel-command-or-error args)))
 
 (defun p4-lowlevel-client-version (&optional noerror)

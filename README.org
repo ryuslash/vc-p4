@@ -27,8 +27,12 @@ pull it into the next generation by making it work on Emacs 26.3 at the moment.
 
   See the [[file:CHANGELOG.org][change log]].
 
-* Usage
+* Switching workspaces
 
-Customization options:
+To automatically switch workspaces based on the directory you’re in, make sure that you have the [[https://www.perforce.com/manuals/cmdref/Content/CmdRef/P4CONFIG.html][P4CONFIG]] variable set. If this is set, for example to =.p4config=, in any directory that you want to associate with a workspace, add a =.p4config= file and add the following line to it:
 
-- ~vc-p4-client~ :: The client to use to try to connect to Perforce. If you have multiple workspaces in Perforce you can set this as a directory-local variable to make sure you're connecting to the right Perforce workspace.
+#+begin_example
+  P4CLIENT=my_client
+#+end_example
+
+Where =my_client= is the name of the client you want to use.

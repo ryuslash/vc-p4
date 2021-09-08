@@ -103,11 +103,6 @@ a prefix argument."
   :type 'string
   :group 'vc)
 
-(defcustom vc-p4-client nil
-  "Specifies the client to use when connecting to Perforce."
-  :type 'string
-  :group 'vc)
-
 (defun vc-p4-revision-granularity ()
   "Return file.
 Perforce has per-file revisions."
@@ -124,7 +119,7 @@ Perforce has per-file revisions."
                (getenv "P4CONFIG")
                (not (vc-p4-find-p4config (file-name-directory file))))
           nil
-        (let* ((fstat (p4-lowlevel-fstat file :noerror t :client vc-p4-client))
+        (let* ((fstat (p4-lowlevel-fstat file :noerror t))
                (action (cdr (or (assoc "action" fstat)
                                 (assoc "headAction" fstat)))))
           (if (or (not fstat)
@@ -143,7 +138,7 @@ previously fetched.  If DONT-COMPARE-NONOPENED is non-nil, don't
 compare non-open files to the depot version."
   (if (and (not force) (vc-file-getprop file 'vc-p4-did-fstat))
       (vc-file-getprop file 'vc-state)
-    (let ((alist (or fstat-list (p4-lowlevel-fstat file :noerror t :client vc-p4-client))))
+    (let ((alist (or fstat-list (p4-lowlevel-fstat file :noerror t))))
       (if (null alist)
           'unregistered
         (let* (
@@ -157,7 +152,7 @@ compare non-open files to the depot version."
                  ((string= action "delete")
                   'removed)
                  (action
-                  (let ((opened (p4-lowlevel-opened file :client vc-p4-client)))
+                  (let ((opened (p4-lowlevel-opened file)))
                     (if (string-match " by \\([^@]+\\)@" opened)
                         (match-string 1 opened)
                       (if (equal headRev haveRev)
@@ -165,7 +160,7 @@ compare non-open files to the depot version."
                         'needs-merge))))
                  ((and (file-exists-p file)
                        (not dont-compare-nonopened)
-                       (p4-lowlevel-diff-s file "e" :client vc-p4-client))
+                       (p4-lowlevel-diff-s file "e"))
                   'unlocked-changes)
                  ((or
                    (equal headRev haveRev)
@@ -189,12 +184,9 @@ compare non-open files to the depot version."
 _FILES is ignored. The UPDATE-FUNCTION is used to process the
 results of this function."
   ;; XXX: this should be asynchronous.
-  (let* ((vc-p4-client (with-current-buffer (find-file-noselect dir)
-                    vc-p4-client))
-         (lists (p4-lowlevel-fstat
+  (let* ((lists (p4-lowlevel-fstat
                  (format "%s/..." (directory-file-name (expand-file-name dir)))
-                 :noerror t
-                 :client vc-p4-client)))
+                 :noerror t)))
     (when (stringp (caar lists))
       (setq lists (list lists)))
     (dolist (this-list lists)
@@ -238,7 +230,7 @@ ignored."
          (not (equal (vc-file-getprop file 'vc-p4-action) "delete"))
          (or (equal state 'up-to-date)
              (equal state 'needs-update)
-             (p4-lowlevel-diff-s file "r" :client vc-p4-client)))))
+             (p4-lowlevel-diff-s file "r")))))
 
 (defun vc-p4-mode-line-string (file)
   "Return string for placement into the mode-line for FILE.
@@ -272,7 +264,7 @@ Perforce doesn’t support adding a comment to registering a file."
   ;; before it used to be just a single file. We don't support that
   ;; interface yet, so just use the first file in the list.
   (let* ((file (if (listp files) (car files) files))
-         (fstat (p4-lowlevel-fstat file :noerror t :client vc-p4-client))
+         (fstat (p4-lowlevel-fstat file :noerror t))
          (action (cdr (assoc "action" fstat))))
     (if (string= action "delete")
         (if (yes-or-no-p
@@ -281,13 +273,13 @@ Perforce doesn’t support adding a comment to registering a file."
               (if (yes-or-no-p "Preserve current contents? ")
                   (let ((tempfile (format "%s.vc-register~" file)))
                     (rename-file file tempfile)
-                    (p4-lowlevel-revert file :client vc-p4-client)
+                    (p4-lowlevel-revert file)
                     (delete-file file)
                     (rename-file tempfile file))
-                (p4-lowlevel-revert file :client vc-p4-client))
-              (p4-lowlevel-edit file :client vc-p4-client))
+                (p4-lowlevel-revert file))
+              (p4-lowlevel-edit file))
           (error "File %s already opened for delete" file))
-      (p4-lowlevel-add file :client vc-p4-client))))
+      (p4-lowlevel-add file))))
 
 (defun vc-p4-init-revision ()
   "Return `1', the default initial version for Perforce files."
@@ -300,7 +292,7 @@ FILE can point to either a file or a directory."
            (getenv "P4CONFIG")
            (not (vc-p4-find-p4config file)))
       nil
-    (or (p4-lowlevel-fstat file :noerror t :client vc-p4-client)
+    (or (p4-lowlevel-fstat file :noerror t)
         (vc-p4-is-in-client (if (file-directory-p file)
                            (file-name-as-directory file)
                          file)))))
@@ -310,8 +302,7 @@ FILE can point to either a file or a directory."
   (p4-lowlevel-print file
                      :rev rev
                      :output-format buffer
-                     :quiet t
-                     :client vc-p4-client))
+                     :quiet t))
 
 (defun vc-p4-checkin (files comment &optional rev)
   "Check FILES into Perforce.
@@ -320,10 +311,7 @@ Check in with comment COMMENT. Error if REV is non-nil."
       (error "Can't specify revision for Perforce checkin"))
   (let* (;; XXX: default-directory?  this should work for most (all?) cases
          (default-directory (file-name-directory (car files)))
-		 (current-client
-          (with-current-buffer (find-file-noselect (car files))
-			vc-p4-client))
-         (change-buffer (p4-lowlevel-change :client current-client))
+         (change-buffer (p4-lowlevel-change))
          (indent-tabs-mode 1)
          insertion-start change-number)
     (dolist (file files)
@@ -342,13 +330,11 @@ Check in with comment COMMENT. Error if REV is non-nil."
         (insert "\t" (vc-file-getprop file 'vc-p4-depot-file) "\n"))
       (setq change-number (p4-lowlevel-change
                            :buffer (current-buffer)
-                           :op t
-                           :client current-client))
+                           :op t))
       (p4-lowlevel-change
        :buffer (current-buffer)
-       :op change-number
-       :client current-client)
-      (p4-lowlevel-submit (current-buffer) :client current-client)
+       :op change-number)
+      (p4-lowlevel-submit (current-buffer))
                                         ; Update its properties
       (dolist (file files)
         (vc-p4-state file nil t)))))
@@ -365,8 +351,8 @@ Check in with comment COMMENT. Error if REV is non-nil."
           (eq rev t))
       (setq rev (vc-file-getprop file 'vc-latest-version))))
     (if (not (string= rev (vc-file-getprop file 'vc-workfile-version)))
-        (p4-lowlevel-sync file :rev rev :client vc-p4-client))
-    (p4-lowlevel-edit file :client vc-p4-client))
+        (p4-lowlevel-sync file :rev rev))
+    (p4-lowlevel-edit file))
   (vc-p4-state file nil t))
 
 (defun vc-p4-revert (file _contents-done)
@@ -379,10 +365,9 @@ _CONTENTS-DONE is ignored."
       ;; to use sync instead of revert.
       (p4-lowlevel-sync file
                         :rev (vc-workfile-version file)
-                        :force t
-                        :client vc-p4-client))
+                        :force t))
      (t
-      (p4-lowlevel-revert file :client vc-p4-client)))
+      (p4-lowlevel-revert file)))
     (if (string= action "add")
         (vc-file-clearprops file)
       (vc-p4-state file nil t))))
@@ -393,9 +378,8 @@ REV1 and REV2 are the revisions to merge together."
   (p4-lowlevel-integrate file file
                          :rev1 rev1
                          :rev2 rev2
-                         :force t
-                         :client vc-p4-client)
-  (p4-lowlevel-resolve file :client vc-p4-client)
+                         :force t)
+  (p4-lowlevel-resolve file)
   (vc-resynch-buffer file t t)
   (vc-p4-state file nil t)
   (if (vc-p4-has-unresolved-conflicts-p file)
@@ -404,8 +388,8 @@ REV1 and REV2 are the revisions to merge together."
 
 (defun vc-p4-merge-news (file)
   "Get the latest version of FILE from Perforce."
-  (p4-lowlevel-sync file :client vc-p4-client)
-  (p4-lowlevel-resolve file :client vc-p4-client)
+  (p4-lowlevel-sync file)
+  (p4-lowlevel-resolve file)
   (vc-resynch-buffer file t t)
   (vc-p4-state file nil t)
   (if (vc-p4-has-unresolved-conflicts-p file)
@@ -432,10 +416,8 @@ otherwise this function will raise an error."
       (error "Can't specify version when stealing Perforce lock"))
   ;; Must set default-directory because this is called in a mail send hook and
   ;; thus not with the current buffer set to the file being reopened.
-  (let ((default-directory (file-name-directory file))
-        (vc-p4-client (with-current-buffer (find-file file)
-                   vc-p4-client)))
-    (p4-lowlevel-reopen file :client vc-p4-client)))
+  (let ((default-directory (file-name-directory file)))
+    (p4-lowlevel-reopen file)))
 
 (defun vc-p4-print-log (files &optional buffer shortlog _revision limit)
   "Print Perforce log for FILES into BUFFER.
@@ -460,8 +442,7 @@ is ignored. If LIMIT is non-nil only print that many log messages."
       (p4-lowlevel-filelog file
                            :buffer (current-buffer)
                            :long (not shortlog)
-                           :limit limit
-                           :client vc-p4-client)
+                           :limit limit)
       ;; Insert the file name at the beginning.
       (goto-char (point-min))
       (insert "File:        " (file-name-nondirectory file) "\n"))))
@@ -526,8 +507,7 @@ Limit it to FILES if it’s non-nil"
                                   :rev1 start-rev
                                   :rev2 end-rev
                                   :l-flag t
-                                  :s-val "submitted"
-                                  :client vc-p4-client)))
+                                  :s-val "submitted")))
     (if (= (point) (point-min)) t
       (if (not (= (point) (point-max)))
           (insert "\n"))
@@ -573,8 +553,6 @@ revisions. If BUFF is non-nil output the diff into it, or use the
                   ((stringp buff) (get-buffer-create buff))
                   (t (get-buffer-create "*vc-diff*"))))
          (files (if (atom file-or-files) (list file-or-files) file-or-files))
-         (vc-p4-client (with-current-buffer (find-file (car files))
-                    vc-p4-client))
          (inhibit-read-only t))
     (cond
      ((and (null rev1) (null rev2))
@@ -611,8 +589,7 @@ revisions. If BUFF is non-nil output the diff into it, or use the
             (with-temp-buffer
               (p4-lowlevel-print file
                                  :output-format (current-buffer)
-                                 :quiet t
-                                 :client vc-p4-client)
+                                 :quiet t)
               (goto-char (point-min))
               (while (search-forward-regexp "^text: " nil t)
                 (replace-match "" nil nil))
@@ -638,7 +615,7 @@ revisions. If BUFF is non-nil output the diff into it, or use the
             (let (temp-buffer)
               (unwind-protect
                   (progn
-                    (setq temp-buffer (p4-lowlevel-diff modified :client vc-p4-client))
+                    (setq temp-buffer (p4-lowlevel-diff modified))
                     (insert-buffer-substring temp-buffer))
                 (when (buffer-live-p temp-buffer)
                   (kill-buffer temp-buffer))))))))
@@ -655,15 +632,13 @@ revisions. If BUFF is non-nil output the diff into it, or use the
                    ((and (not rev1) rev2)
                     (p4-lowlevel-diff2 file file
                                        :rev1 (vc-file-getprop file 'vc-workfile-version)
-                                       :rev2 rev2
-                                       :client vc-p4-client))
+                                       :rev2 rev2))
                    ((and rev1 rev2)
                     (p4-lowlevel-diff2 file file
                                        :rev1 rev1
-                                       :rev2 rev2
-                                       :client vc-p4-client))
+                                       :rev2 rev2))
                    ((and rev1 (not rev2))
-                    (p4-lowlevel-diff file :rev rev1 :client vc-p4-client))))
+                    (p4-lowlevel-diff file :rev rev1))))
             (insert-buffer-substring temp-buffer)
             (kill-buffer temp-buffer))))))
 
@@ -946,7 +921,7 @@ If DIRNAME is not specified, uses `default-directory'."
 (defun vc-p4-is-in-client (file)
   "Return non-nil if FILE is inside the p4 client hierarchy."
   (let* ((default-directory (file-name-directory file))
-         (info (p4-lowlevel-info :client vc-p4-client))
+         (info (p4-lowlevel-info))
          (root (alist-get "Client root" info nil nil #'string=))
          (cwd (alist-get "Current directory" info nil nil #'string=)))
     (string-prefix-p root cwd)))
@@ -1029,7 +1004,7 @@ documentation for that command for their meanings."
 
 (defun vc-p4-delete-file (file)
   "Tell perforce to delete FILE from the repository."
-  (p4-lowlevel-delete file :client vc-p4-client))
+  (p4-lowlevel-delete file))
 
 (defun vc-p4-switch-client (client)
   "Switch to CLIENT as the current client used for all operations."
@@ -1048,7 +1023,7 @@ documentation for that command for their meanings."
 
 (defun vc-p4-dir-extra-headers (dir)
   "Get extra Perforce-specific vc-dir headers related to DIR."
-  (let ((extra-info (p4-lowlevel-info :client vc-p4-client)))
+  (let ((extra-info (p4-lowlevel-info)))
     (concat
      (propertize "Client     :" 'face 'font-lock-type-face)
      " "

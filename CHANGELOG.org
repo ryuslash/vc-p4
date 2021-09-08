@@ -8,10 +8,6 @@ project adheres to [[https://semver.org/spec/v2.0.0.html][Semantic Versioning 2.
 
 * COMMENT Unreleased
 
-** ADDED The ~vc-p4-client~ custom variable
-
-This allows users to set a client name to use. The idea is that this lets users set the client to use for a certain directory tree, when they have multiple clients they use.
-
 ** CHANGED Enabled ~lexical-binding~
 
 Both =vc-p4.el= and =p4-lowlevel.el= now use lexical binding instead of dynamic binding.
