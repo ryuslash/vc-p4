@@ -15,8 +15,7 @@ pull it into the next generation by making it work on Emacs 26.3 at the moment.
   - Delete existing changelists.
   - Move files between changelists.
   - View changelist info in =vc-dir=.
-  - View repository information in =vc-dir=. (Things like the Client name, current
-    workspace, etc.)
+  - +View repository information in =vc-dir=. (Things like the Client name, current workspace, etc.)+
   - +Switch workspaces+.
 
   Some of these features may already be present and working and I just haven't
