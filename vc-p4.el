@@ -1023,7 +1023,8 @@ documentation for that command for their meanings."
 
 (defun vc-p4-dir-extra-headers (dir)
   "Get extra Perforce-specific vc-dir headers related to DIR."
-  (let ((extra-info (p4-lowlevel-info)))
+  (let* ((default-directory dir)
+         (extra-info (p4-lowlevel-info)))
     (concat
      (propertize "Client     :" 'face 'font-lock-type-face)
      " "
