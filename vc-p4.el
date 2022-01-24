@@ -822,7 +822,8 @@ _VERSION is ignored."
                         ((string= op "d")
                          (setq ra (1+ ra))))
                   (with-current-buffer ch-buffer
-                    (goto-line la)
+                    (goto-char (point-min))
+                    (forward-line (1- la))
                     (let ((beg (point)))
                       (forward-line (1+ (- lb la)))
                       (delete-region beg (point)))
@@ -844,7 +845,8 @@ _VERSION is ignored."
                           " "))
                  xth-rev xth-date xth-auth)
         (with-current-buffer buffer
-          (goto-line 2)
+          (goto-char (point-min))
+          (forward-line 1)
           (move-to-column 0)
           (insert (format "%10s %7s %6s %4s\n" "Date" "Author" "Change"  "Rev"))
           (while (setq line (vc-p4-read-output ch-buffer))
