@@ -35,6 +35,8 @@
 
 ;;; Code:
 
+(require 'subr-x)
+
 (defgroup p4-lowlevel nil
   "Emacs-lisp interface to Perforce operations."
   :group 'tools)
@@ -818,7 +820,10 @@ only on the server and not touch the local files."
                        preview-args
                        server-only-args
                        (list from-file to-file))))
-    (p4-lowlevel-command-or-error args)))
+    (p4-lowlevel-command-or-error args)
+    (when-let* ((buffer (find-buffer-visiting from-file)))
+      (with-current-buffer buffer
+        (set-visited-file-name to-file)))))
 
 (provide 'p4-lowlevel)
 
