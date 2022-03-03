@@ -1048,7 +1048,7 @@ documentation for that command for their meanings."
      (propertize (alist-get "Server address" extra-info nil nil #'string=)
                  'face 'font-lock-variable-name-face))))
 
-(defun vc-p4-rename (old new)
+(defun vc-p4-rename-file (old new)
   "Rename OLD to NEW in Perforce."
   (p4-lowlevel-rename old new))
 
