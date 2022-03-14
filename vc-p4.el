@@ -60,6 +60,7 @@
 ;;; Code:
 
 (require 'log-edit)
+(require 'vc-dir)
 
 (eval-and-compile
   (if (not (string-match "XEmacs" emacs-version))
@@ -191,11 +192,12 @@ results of this function."
       (setq lists (list lists)))
     (dolist (this-list lists)
       (let* ((this-file (cdr (assoc "clientFile" this-list)))
+             (type (cdr (assoc "headType" this-list)))
              (state (vc-p4-state this-file this-list t t)))
         (unless (eq state 'up-to-date)
           (funcall update-function
                    (list
-                    (list (file-relative-name this-file dir) state))
+                    (list (file-relative-name this-file dir) state type))
                    t))))
     (funcall update-function nil nil)))
 
@@ -1047,6 +1049,12 @@ documentation for that command for their meanings."
      " "
      (propertize (alist-get "Server address" extra-info nil nil #'string=)
                  'face 'font-lock-variable-name-face))))
+
+(defun vc-p4-dir-printer (fileinfo)
+  "Call ‘vc-default-dir-printer’ and append the extra part of FILEINFO."
+  (vc-default-dir-printer 'P4 fileinfo)
+  (when-let ((extra (vc-dir-fileinfo->extra fileinfo)))
+    (insert " <" extra ">")))
 
 (defun vc-p4-rename-file (old new)
   "Rename OLD to NEW in Perforce."
