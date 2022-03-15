@@ -32,6 +32,10 @@ Specifically the Server, root directory, client, and stream are shown in the hea
 
 This shows whether the file is binary, or text, and whether it has the lock, modification time, etc. modifiers enabled.
 
+** FIXED An issue with files with move/delete as their head action showing in vc-dir
+
+vc-p4 didn't understand that move/delete was a thing, so it assumed that it meant the same as needs-update
+
 * 0.2.1 -- 2020-05-27
 ** FIXED Recognition of sub-directories of Perforce repos
 

@@ -165,7 +165,9 @@ compare non-open files to the depot version."
                   'unlocked-changes)
                  ((or
                    (equal headRev haveRev)
-                   (and (null haveRev) (string= headAction "delete")))
+                   (and (null haveRev)
+                        (or (string= headAction "delete")
+                            (string= headAction "move/delete"))))
                   'up-to-date)
                  (t
                   'needs-update))))
