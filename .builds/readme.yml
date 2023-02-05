@@ -22,6 +22,6 @@ tasks:
             "readme": .
           }
       }' < $readme \
-      | curl --fail-with-body --oauth2-bearer <(~/.vc-p4-auth) \
+      | curl --fail-with-body --oauth2-bearer "$(cat ~/.vc-p4-auth)" \
         -H "Content-Type: application/json" \
         -d@- https://git.sr.ht/query
