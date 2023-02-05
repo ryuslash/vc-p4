@@ -21,3 +21,9 @@ $(NAME)-pkg.el:
 
 clean:
 	rm -rf $(NAME)-pkg.el $(NAME)-$(VERSION).tar $(FULLNAME)/
+
+README.html: README.org
+	emacs --batch --quick \
+	    --eval "(require 'ox-html)" \
+	    --visit $< \
+	    --eval "(org-html-export-to-html nil nil nil t)"

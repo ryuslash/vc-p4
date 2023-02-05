@@ -1,0 +1,27 @@
+image: alpine/latest
+packages:
+  - make
+  - emacs-nox
+  - jq
+secrets:
+  - 45c41227-eb85-4831-942f-12b840504f6c
+tasks:
+  - build: |
+      cd vc-p4
+      make README.html
+  - readme: |
+      cd vc-p4
+      set +x
+      repo_id=264869
+      readme=README.html
+      jq -sR '{
+          "query": "mutation UpdateRepo($id: Int!, $readme: String!) {
+            updateRepository(id: $id, input: { readme: $readme }) { id }
+          }", "variables": {
+            "id": '$repo_id',
+            "readme": .
+          }
+      }' < $readme \
+      | curl --oauth2-bearer <(~/.vc-p4-auth) \
+        -H "Content-Type: application/json" \
+        -d@- https://git.sr.ht/query
