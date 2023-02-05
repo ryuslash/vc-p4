@@ -1,4 +1,5 @@
 #+TITLE: vc-p4
+#+options: num:nil
 
 This package provides VC integration with the Perforce version control system.
 
