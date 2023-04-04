@@ -352,9 +352,8 @@ that buffer. Returns the buffer."
 (defun p4-lowlevel-command-messages ()
   "Return t if ‘vc-command-messages’ bound and true.
 Fall back to the value of ‘p4-lowlevel-command-messages’."
-  (if (and (boundp 'vc-command-messages) vc-command-messages)
-      t
-    p4-lowlevel-command-messages))
+  (or (bound-and-true-p vc-command-messages)
+      p4-lowlevel-command-messages))
 
 (defun p4-lowlevel-canonicalize-revision (rev)
   "Turn REV into a form which can be concatenated to file names in P4 commands."
