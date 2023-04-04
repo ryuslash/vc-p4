@@ -930,7 +930,7 @@ If DIRNAME is not specified, uses `default-directory'."
          (info (p4-lowlevel-info))
          (root (alist-get "Client root" info nil nil #'string=))
          (cwd (alist-get "Current directory" info nil nil #'string=)))
-    (string-prefix-p root cwd)))
+    (string-prefix-p root cwd t)))
 
 (defun vc-p4-has-unresolved-conflicts-p (file)
   "Search through FILE's buffer for unresolved P4 conflicts.
