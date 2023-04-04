@@ -626,7 +626,7 @@ then the `-q' flag is passed to `p4 print'."
   (let* ((fullfile (if rev (concat file rev) file))
          (quiet-args (if quiet (list "-q")))
          (args (append (list "print") quiet-args (list fullfile))))
-    (p4-lowlevel-command-or-error args nil output-format)))
+    (p4-lowlevel-command-into-buffer args output-format)))
 
 ;; Here's what we need to support from the "p4 reopen" command, at least for the
 ;; time being:
